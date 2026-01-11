@@ -16,6 +16,7 @@
         input { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 800px; }
+        .rank-gold { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
         
         /* High Visibility Ticker */
         .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
@@ -54,7 +55,7 @@
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-[45]"></div>
 
     <div id="share-modal" class="fixed inset-0 z-[110] items-center justify-center p-6 bg-black/95">
-        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative shadow-[0_0_60px_rgba(219,39,119,0.2)]">
+        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative">
             <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 text-[10px] font-bold uppercase">✕ Close</button>
             <h2 class="text-3xl font-black italic uppercase leading-none mb-2">Certified Failure</h2>
             <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-8 mt-4">
@@ -130,7 +131,7 @@
             <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
             <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Open the sidebar to select a pack)</p>
         </div>
-        <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all">
+        <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all mb-4">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         </button>
     </main>
@@ -164,13 +165,22 @@
             document.getElementById('share-count').innerText = localCount;
         };
 
-        // AVATAR DISPLAY
+        // AUDIO - Restoration: Ensure ID matches the HTML button
+        document.getElementById('speakBtn').addEventListener('click', () => {
+            const msg = document.getElementById('message').innerText;
+            if (msg && msg !== "Welcome.") {
+                const utterance = new SpeechSynthesisUtterance(msg);
+                utterance.lang = currentLang;
+                window.speechSynthesis.speak(utterance);
+            }
+        });
+
+        // AVATAR DISPLAY & UPLOAD
         window.displayAvatar = (url) => {
             const img = document.getElementById('avatar-img'); const lettr = document.getElementById('avatar-letter');
             img.src = url; img.classList.remove('hidden'); lettr.classList.add('hidden');
         };
 
-        // AVATAR UPLOAD
         window.uploadAvatar = async (e) => {
             const file = e.target.files[0]; if (!file || currentUser.is_anonymous) return alert("Sign up to upload an avatar!");
             const path = `${currentUser.id}-${Date.now()}.${file.name.split('.').pop()}`;
@@ -208,15 +218,16 @@
             }
         }
 
-        // REALTIME
+        // REALTIME TICKER
         function subscribeToActivity() {
             sb.channel('public:profiles').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
                 const u = payload.new;
-                document.getElementById('global-ticker').innerText = `${u.username || 'Someone'} just hit ${u.lifetime_clicks} rejections! • `.repeat(5);
+                const tickerMsg = `${u.username || 'Someone'} just hit ${u.lifetime_clicks} rejections! • `.repeat(5);
+                document.getElementById('global-ticker').innerText = tickerMsg;
             }).subscribe();
         }
 
-        // ACTION
+        // ACTION BUTTON
         document.getElementById('actionBtn').addEventListener('click', async () => {
             const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
             if (data?.length) {
@@ -226,20 +237,20 @@
 
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = `(${item.translation})`;
-                document.getElementById('speakBtn').classList.remove('hidden');
+                document.getElementById('speakBtn').classList.remove('hidden'); // Show speaker after phrase loads
                 
                 localCount++; updateStatsUI();
                 await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
             }
         });
 
-        // REUSABLE LOGIC
+        // LEADERBOARD & AUTH
         window.fetchLeaderboard = async () => {
             const { data } = await sb.from('profiles').select('username, lifetime_clicks, avatar_url').order('lifetime_clicks', { ascending: false }).limit(5);
             document.getElementById('leaderboard-list').innerHTML = (data || []).map((u, i) => `
                 <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
                     <div class="flex items-center gap-2">
-                        <span>#${i+1}</span>
+                        <span class="${i === 0 ? 'rank-gold' : ''}">#${i+1}</span>
                         <div class="w-6 h-6 rounded-full bg-gray-800 overflow-hidden flex items-center justify-center">
                             ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : `<span>${(u.username || '?')[0]}</span>`}
                         </div>
