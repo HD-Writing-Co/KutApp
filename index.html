@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; transition: background-color 0.2s; }
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; transition: all 0.3s; }
         .glitch { text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
         .shake { animation: shake 0.4s; }
         @keyframes shake {
@@ -18,14 +18,19 @@
             60% { transform: translate(-1px, -1px); }
             100% { transform: translate(0, 0); }
         }
+        .level-up { animation: pulse 1.5s infinite; color: #db2777; font-weight: 900; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 overflow-hidden">
 
     <header class="w-full flex justify-between items-center max-w-4xl">
-        <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
-        <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
-            Total Rejections: <span id="counter" class="text-white bg-gray-900 px-2 py-1 rounded">0</span>
+        <div class="flex flex-col">
+            <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
+            <div id="user-rank" class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-bold">Rank: Disposable Human</div>
+        </div>
+        <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold text-right">
+            Rejections: <span id="counter" class="text-white bg-gray-900 px-2 py-1 rounded">0</span>
         </div>
     </header>
 
@@ -39,34 +44,34 @@
         </h1>
         
         <p id="subtext" class="text-gray-500 text-lg font-medium max-w-sm leading-relaxed">
-            (Click the button below to be insulted.)
+            (Loading your misery...)
         </p>
     </main>
 
-    <footer class="w-full max-w-sm flex flex-col gap-6 mb-4">
+    <footer class="w-full max-w-sm flex flex-col gap-4 mb-4">
         
         <div class="flex flex-col gap-2">
-            <label class="text-[10px] uppercase text-gray-600 font-black tracking-widest text-center">Select Rejection Pack</label>
-            <select id="packSelect" class="bg-gray-900 border border-gray-800 text-white p-4 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-pink-600 transition-all appearance-none text-center cursor-pointer hover:border-gray-600">
+            <label class="text-[10px] uppercase text-gray-600 font-black tracking-widest text-center">Rejection Pack</label>
+            <select id="packSelect" class="bg-gray-900 border border-gray-800 text-white p-4 rounded-xl text-sm focus:outline-none appearance-none text-center cursor-pointer hover:border-gray-600">
                 <option value="1">Dutch Basics (Free)</option>
                 <option value="2">English Blunt (Free)</option>
                 <option value="3">Corporate Passive (Free)</option>
-                <option value="locked">Unlock More... (DLC)</option>
             </select>
         </div>
 
-		<div id="auth-section" class="hidden flex flex-col gap-2 border-t border-gray-800 pt-4 mt-2">
-			<p class="text-[10px] text-gray-500 uppercase text-center">Save progress across devices</p>
-				<button onclick="linkAccount()" class="text-xs font-bold text-pink-600 hover:text-white transition-all">
-				Link Email Address
-				</button>
-		</div>
-       
-	   <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3">
             <button onclick="handleRejection()" id="actionBtn" class="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase tracking-tight active:scale-95">
                 Keep Going
             </button>
-            <button onclick="window.location.href='https://google.com'" class="w-full text-gray-600 hover:text-white py-2 transition-all text-xs font-bold uppercase tracking-widest">
+            
+            <div id="auth-ui" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 text-center">
+                <p id="auth-status" class="text-[9px] text-gray-500 uppercase mb-2">Progress saved locally</p>
+                <button id="link-btn" onclick="secureAccount()" class="text-[10px] font-black text-pink-600 uppercase hover:text-pink-400">
+                    Link Email to Save Forever
+                </button>
+            </div>
+
+            <button onclick="window.location.href='https://google.com'" class="w-full text-gray-700 hover:text-white py-2 transition-all text-[10px] font-bold uppercase tracking-widest">
                 I've had enough
             </button>
         </div>
@@ -74,140 +79,59 @@
 
     <script>
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; // Keep your key safe!
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
         let localCount = 0;
 
-        // --- SESSION & DATA PERSISTENCE ---
+        // --- AUTH & PERSISTENCE ---
 
-        async function initSession() {
-            // Check for existing session
-            const { data: { session } } = await supabaseClient.auth.getSession();
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
             
             if (!session) {
-                // Sign in anonymously if no session exists
-                const { data, error } = await supabaseClient.auth.signInAnonymously();
-                if (error) {
-                    console.error("Auth Error:", error.message);
-                    document.getElementById('status-tag').innerText = "Offline Mode";
-                    return;
-                }
+                // Anonymous login (No UI pop-up, happens in background)
+                const { data } = await supabase.auth.signInAnonymously();
                 currentUser = data.user;
             } else {
                 currentUser = session.user;
+                if (!currentUser.is_anonymous) {
+                    document.getElementById('auth-status').innerText = "Account Secured: " + currentUser.email;
+                    document.getElementById('link-btn').classList.add('hidden');
+                }
             }
-
-            // Load user profile data
-            await loadProfile();
+            loadData();
         }
 
-        async function loadProfile() {
-            if (!currentUser) return;
-
-            const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('lifetime_clicks')
-                .eq('id', currentUser.id)
-                .single();
-
+        async function loadData() {
+            const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
                 localCount = data.lifetime_clicks;
-                document.getElementById('counter').innerText = localCount;
-                document.getElementById('status-tag').innerText = "System Ready";
+                updateStatsUI();
             } else {
-                // Create profile if it doesn't exist
-                await supabaseClient.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
-                document.getElementById('status-tag').innerText = "New Loser Detected";
+                await supabase.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
             }
+            document.getElementById('status-tag').innerText = "System Live";
+            document.getElementById('subtext').innerText = "(Click to begin your dismissal)";
         }
 
-        async function syncProgress() {
-            if (!currentUser) return;
+        async function secureAccount() {
+            const email = prompt("Enter email to save progress:");
+            const pass = prompt("Create a password:");
+            if (!email || !pass) return;
+
+            // This converts the anonymous user into a permanent user
+            const { error } = await supabase.auth.updateUser({ email: email, password: pass });
             
-            await supabaseClient
-                .from('profiles')
-                .update({ lifetime_clicks: localCount })
-                .eq('id', currentUser.id);
+            if (error) alert("Error: " + error.message);
+            else alert("Account linked! Check your email for a confirmation link.");
         }
 
-        // --- CORE APP LOGIC ---
+        // --- GAMEPLAY ---
 
         async function handleRejection() {
             const packId = document.getElementById('packSelect').value;
-            
-            if (packId === "locked") {
-                alert("This requires the Expansion Pack DLC. Coming soon!");
-                return;
-            }
+            const { data } = await supabase.from('phrases').select('*').eq('pack_id', packId);
 
-            const { data, error } = await supabaseClient
-                .from('phrases')
-                .select('content, translation')
-                .eq('pack_id', packId);
-
-            if (error) {
-                console.error("Database Error:", error.message);
-                return;
-            }
-
-            if (data && data.length > 0) {
-                const randomItem = data[Math.floor(Math.random() * data.length)];
-                updateUI(randomItem.content, randomItem.translation);
-                trackProgress();
-            }
-        }
-
-        function updateUI(content, translation) {
-            const msgEl = document.getElementById('message');
-            msgEl.innerText = content;
-            document.getElementById('subtext').innerText = `(${translation})`;
-            
-            msgEl.classList.add('glitch');
-            setTimeout(() => msgEl.classList.remove('glitch'), 150);
-
-            if (localCount > 10) {
-                document.body.classList.add('shake');
-                setTimeout(() => document.body.classList.remove('shake'), 400);
-            }
-        }
-
-        function trackProgress() {
-            localCount++;
-            document.getElementById('counter').innerText = localCount;
-            document.getElementById('status-tag').innerText = "Processing Rejection " + localCount;
-            
-            const btn = document.getElementById('actionBtn');
-            if (localCount === 5) btn.innerText = "Still here?";
-            if (localCount === 10) btn.innerText = "Don't you have a life?";
-            if (localCount === 20) btn.innerText = "Okay, this is sad now.";
-
-            // Sync with Supabase
-            syncProgress();
-        }
-		
-			// Account Login
-		async function linkAccount() {
-			const email = prompt("Enter your email to save your rejections forever:");
-			const password = prompt("Create a password:");
-
-			if (email && password) {
-			const { data, error } = await supabaseClient.auth.updateUser({
-            email: email,
-            password: password
-			});
-
-			if (error) {
-				alert("Error linking account: " + error.message);
-			} else {
-				alert("Account secured! You can now log in from any device.");
-				}
-			}
-		}
-
-        // Initialize on load
-        initSession();
-    </script>
-</body>
-</html>
+            if (data
