@@ -18,16 +18,15 @@
         .accordion-content.open { max-height: 800px; }
         
         .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
-        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 20s linear infinite; color: #ffffff; font-weight: 900; }
+        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 25s linear infinite; color: #ffffff; font-weight: 900; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
-        .live-dot { height: 6px; width: 6px; background: #db2777; border-radius: 50%; box-shadow: 0 0 8px #db2777; animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
         #avatar-circle { cursor: pointer; position: relative; overflow: hidden; width: 48px; height: 48px; border-radius: 9999px; }
         #avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        .upload-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; font-size: 8px; font-weight: 900; }
-        #avatar-circle:hover .upload-overlay { opacity: 1; }
+        
+        /* Progress Bar Styling */
+        .xp-bar-bg { width: 100%; height: 4px; background: #1a1a1a; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        #xp-progress { width: 0%; height: 100%; background: #db2777; transition: width 0.5s ease; }
 
         @keyframes insultPop { 0% { transform: scale(0.9); opacity: 0; filter: blur(5px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
         .animate-pop { animation: insultPop 0.2s ease-out forwards; }
@@ -40,11 +39,11 @@
 
     <div class="ticker-wrap">
         <div class="flex items-center px-4 border-r border-gray-800 bg-[#0a0a0a] z-10 h-full gap-2">
-            <span class="live-dot"></span>
-            <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">Live</span>
+            <span class="h-1.5 w-1.5 bg-pink-600 rounded-full animate-pulse shadow-[0_0_8px_#db2777]"></span>
+            <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">Global</span>
         </div>
         <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest">
-            Welcome to KutApp.io • Share your misery with the world • 
+            Welcome to KutApp.io • Level up your failure today • 
         </div>
     </div>
 
@@ -52,13 +51,19 @@
 
     <div id="share-modal" class="fixed inset-0 z-[110] items-center justify-center p-6 bg-black/95">
         <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative shadow-[0_0_60px_rgba(219,39,119,0.2)]">
-            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 text-[10px] font-bold uppercase">✕ Close</button>
+            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 text-[10px] font-bold uppercase">✕</button>
             <h2 class="text-3xl font-black italic uppercase leading-none mb-2">Certified Failure</h2>
-            <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-8 mt-4">
+            <p id="current-rank-label" class="text-pink-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Annoying Pest</p>
+            <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-6">
                 <div id="share-count" class="text-6xl font-black text-white">0</div>
                 <div class="text-[9px] uppercase font-bold text-gray-500 mt-2">Rejections Logged</div>
             </div>
-            <button onclick="copyShareLink()" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs">Copy Stats</button>
+            <div class="flex flex-col gap-2">
+                <button onclick="copyShareLink()" class="w-full bg-white text-black font-black py-4 rounded-xl uppercase text-xs">Copy Stats Link</button>
+                <button onclick="shareToX()" class="w-full bg-[#1da1f2] text-white font-black py-4 rounded-xl uppercase text-xs flex items-center justify-center gap-2">
+                    Share on X
+                </button>
+            </div>
         </div>
     </div>
 
@@ -80,16 +85,24 @@
                 </div>
                 <div id="logged-in-view" class="hidden">
                     <div class="flex items-center gap-3 mb-6">
-                        <div id="avatar-circle" onclick="document.getElementById('avatar-upload').click()" class="bg-pink-900/30 border border-pink-600 flex items-center justify-center font-black text-pink-600">
+                        <div id="avatar-circle" onclick="document.getElementById('avatar-upload').click()" class="bg-pink-900/30 border border-pink-600 flex items-center justify-center font-black text-pink-600 text-xl">
                             <img id="avatar-img" class="hidden"> <span id="avatar-letter">?</span>
-                            <div class="upload-overlay">EDIT</div>
                         </div>
                         <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(event)">
-                        <div class="text-left w-full">
-                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Username" class="mb-0 bg-transparent border-none p-0 font-bold text-white w-full">
-                            <p class="text-[9px] text-gray-500 uppercase" id="display-email"></p>
+                        <div class="text-left">
+                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Username" class="mb-0 bg-transparent border-none p-0 font-bold text-white text-lg">
+                            <p class="text-[10px] text-gray-400 uppercase font-black" id="streak-label">Streak: 0 🔥</p>
                         </div>
                     </div>
+                    
+                    <div class="bg-[#0f0f0f] p-4 rounded-xl border border-gray-900 mb-6">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] uppercase font-bold text-gray-500 tracking-widest" id="level-title">Level: Annoying Pest</span>
+                            <span class="text-[9px] font-bold text-pink-600" id="xp-text">0/10</span>
+                        </div>
+                        <div class="xp-bar-bg"><div id="xp-progress"></div></div>
+                    </div>
+
                     <button onclick="handleLogout()" class="w-full bg-red-900/10 text-red-500 py-2 rounded text-[10px] font-black uppercase">Logout</button>
                 </div>
             </div>
@@ -117,15 +130,16 @@
 
     <header class="w-full flex justify-between items-center max-w-4xl">
         <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
-        <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600">
+        <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600 relative">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            <span id="nav-dot" class="absolute top-2 right-2 w-2 h-2 bg-pink-600 rounded-full hidden"></span>
         </button>
     </header>
 
     <main class="text-center flex flex-grow flex-col justify-center items-center">
         <div id="message-container">
             <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
-            <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Open the sidebar to select a pack)</p>
+            <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Select a pack in the sidebar)</p>
         </div>
         <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all mb-4">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -152,11 +166,17 @@
 
         let currentUser = null, localCount = 0, activePack = 1, currentLang = 'nl-NL';
 
-        // MILESTONE AUDIO (SYNTHESIZED)
+        // MILSTONES & LEVELS
+        const ranks = [
+            { threshold: 0, title: "Annoying Pest", max: 10 },
+            { threshold: 10, title: "Local Nuisance", max: 50 },
+            { threshold: 50, title: "Professional Failure", max: 100 },
+            { threshold: 100, title: "Legendary Outcast", max: 1000 }
+        ];
+
         const playDing = () => {
             const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
+            const osc = ctx.createOscillator(); const gain = ctx.createGain();
             osc.connect(gain); gain.connect(ctx.destination);
             osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
@@ -164,22 +184,27 @@
             osc.start(); osc.stop(ctx.currentTime + 0.5);
         };
 
-        // CORRECTED PRONUNCIATION LOGIC
+        const updateLevelUI = (count) => {
+            const current = ranks.reverse().find(r => count >= r.threshold);
+            ranks.reverse(); // put it back
+            document.getElementById('level-title').innerText = `Level: ${current.title}`;
+            document.getElementById('current-rank-label').innerText = current.title;
+            const progress = ((count - current.threshold) / (current.max - current.threshold)) * 100;
+            document.getElementById('xp-progress').style.width = `${Math.min(progress, 100)}%`;
+            document.getElementById('xp-text').innerText = `${count}/${current.max}`;
+        };
+
+        // AUDIO
         document.getElementById('speakBtn').addEventListener('click', () => {
             const msg = document.getElementById('message').innerText;
             if (!msg || msg === "Welcome.") return;
-            
-            window.speechSynthesis.cancel(); // Stop current speech
+            window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(msg);
-            
-            // Try to find a native Dutch voice specifically
             const voices = window.speechSynthesis.getVoices();
             const dutchVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
             if (dutchVoice) utterance.voice = dutchVoice;
-            
             utterance.lang = currentLang;
-            utterance.rate = 0.9; // Slightly slower for clarity
-            utterance.pitch = 1.0;
+            utterance.rate = 0.9;
             window.speechSynthesis.speak(utterance);
         });
 
@@ -198,8 +223,8 @@
         };
 
         window.uploadAvatar = async (e) => {
-            const file = e.target.files[0]; if (!file || currentUser.is_anonymous) return alert("Sign up to upload an avatar!");
-            const path = `${currentUser.id}-${Date.now()}.${file.name.split('.').pop()}`;
+            const file = e.target.files[0]; if (!file || currentUser.is_anonymous) return alert("Login to upload!");
+            const path = `${currentUser.id}-${Date.now()}`;
             await sb.storage.from('avatars').upload(path, file);
             const { data } = sb.storage.from('avatars').getPublicUrl(path);
             await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
@@ -217,18 +242,15 @@
             }
             loadProfile();
             subscribeToActivity();
-            // Pre-load voices
-            window.speechSynthesis.getVoices();
         }
 
         async function loadProfile() {
             const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
-                localCount = data.lifetime_clicks; updateStatsUI();
-                if (data.username) {
-                    document.getElementById('username-input').value = data.username;
-                    if (!data.avatar_url) document.getElementById('avatar-letter').innerText = data.username[0].toUpperCase();
-                }
+                localCount = data.lifetime_clicks; 
+                updateStatsUI();
+                updateLevelUI(localCount);
+                if (data.username) document.getElementById('username-input').value = data.username;
                 if (data.avatar_url) displayAvatar(data.avatar_url);
             } else {
                 await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
@@ -238,7 +260,7 @@
         function subscribeToActivity() {
             sb.channel('public:profiles').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
                 const u = payload.new;
-                document.getElementById('global-ticker').innerText = `${u.username || 'Someone'} just hit ${u.lifetime_clicks} rejections! • `.repeat(5);
+                document.getElementById('global-ticker').innerText = `${u.username || 'Someone'} reached ${u.lifetime_clicks} rejections! • `.repeat(5);
             }).subscribe();
         }
 
@@ -246,19 +268,16 @@
             const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
             if (data?.length) {
                 const item = data[Math.floor(Math.random() * data.length)];
-                const msgCont = document.getElementById('message-container');
-                msgCont.classList.remove('animate-pop'); void msgCont.offsetWidth; msgCont.classList.add('animate-pop');
-
+                document.getElementById('message-container').classList.remove('animate-pop'); void document.getElementById('message-container').offsetWidth; document.getElementById('message-container').classList.add('animate-pop');
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = `(${item.translation})`;
                 document.getElementById('speakBtn').classList.remove('hidden');
                 
-                localCount++; updateStatsUI();
+                localCount++; updateStatsUI(); updateLevelUI(localCount);
                 
-                // CELEBRATION LOGIC
-                if (localCount === 10 || localCount === 50 || localCount === 100) {
+                if (ranks.some(r => localCount === r.threshold && localCount > 0)) {
                     playDing();
-                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#db2777', '#ffffff'] });
+                    confetti({ particleCount: 200, spread: 80, origin: { y: 0.7 }, colors: ['#db2777', '#ffffff'] });
                 }
 
                 await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
@@ -283,7 +302,17 @@
         window.updateUsername = async () => {
             const name = document.getElementById('username-input').value;
             await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
-            if (!document.getElementById('avatar-img').src) document.getElementById('avatar-letter').innerText = name[0].toUpperCase();
+        };
+
+        window.shareToX = () => {
+            const rank = document.getElementById('current-rank-label').innerText;
+            const text = encodeURIComponent(`I've logged ${localCount} rejections on KutApp.io and achieved the rank of "${rank}". Absolute failure. Beat me: `);
+            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${window.location.href}`, '_blank');
+        };
+
+        window.copyShareLink = () => {
+            navigator.clipboard.writeText(`I have ${localCount} rejections on KutApp.io! Join the misery: ${window.location.href}`);
+            alert("Link copied!");
         };
 
         window.handleAuth = async (type) => {
@@ -297,7 +326,7 @@
         function showLoggedIn(user) {
             document.getElementById('logged-out-view').classList.add('hidden');
             document.getElementById('logged-in-view').classList.remove('hidden');
-            document.getElementById('display-email').innerText = user.email;
+            document.getElementById('nav-dot').classList.remove('hidden');
         }
 
         init();
