@@ -188,7 +188,20 @@
         window.displayAvatar = (url) => {
             const img = document.getElementById('avatar-img');
             const letter = document.getElementById('avatar-letter');
-            img.src = url; img.classList.remove('hidden'); letter.classList.add('hidden');
+            
+			if (url) {
+				img.onload = () => {
+					img.classList.remove('hidden');
+					letter.classList.add('hidden');
+				};
+				img.onerror = () => {
+					console.error("Failed to load image at:", url);
+					img.classList.add('hidden');
+					letter.classList.remove('hidden');
+					letter.innerText = "!"; // Show error state
+				};
+				img.src = url;
+			}
         };
 
         window.uploadAvatar = async (event) => {
