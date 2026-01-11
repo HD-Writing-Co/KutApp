@@ -17,25 +17,23 @@
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 800px; }
         
-        /* Animations */
-        @keyframes insultPop {
-            0% { transform: scale(0.9); opacity: 0; filter: blur(5px); }
-            100% { transform: scale(1); opacity: 1; filter: blur(0); }
-        }
-        .animate-pop { animation: insultPop 0.2s ease-out forwards; }
-
-        @keyframes ticker {
-            0% { transform: translateX(100%); }
-            100% { transform: translateX(-100%); }
-        }
-        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 20s linear infinite; }
-
-        /* Ticker UI */
+        /* High Visibility Ticker */
         .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
+        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 20s linear infinite; color: #ffffff; font-weight: 900; }
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
         .live-dot { height: 6px; width: 6px; background: #db2777; border-radius: 50%; box-shadow: 0 0 8px #db2777; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-        /* Share Modal */
+        /* Avatar Styling */
+        #avatar-circle { cursor: pointer; position: relative; overflow: hidden; width: 48px; height: 48px; border-radius: 9999px; }
+        #avatar-img { width: 100%; height: 100%; object-fit: cover; }
+        .upload-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; font-size: 8px; font-weight: 900; }
+        #avatar-circle:hover .upload-overlay { opacity: 1; }
+
+        /* Animations & Modals */
+        @keyframes insultPop { 0% { transform: scale(0.9); opacity: 0; filter: blur(5px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
+        .animate-pop { animation: insultPop 0.2s ease-out forwards; }
         #share-modal { display: none; }
         #share-modal.active { display: flex; }
         .certificate-bg { background: linear-gradient(45deg, #0a0a0a, #000); border: 2px solid #db2777; }
@@ -48,20 +46,20 @@
             <span class="live-dot"></span>
             <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">Live</span>
         </div>
-        <div id="global-ticker" class="ticker-move text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-            Welcome to KutApp.io • Join the community of failures • 
+        <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest">
+            Welcome to KutApp.io • Share your misery with the world • 
         </div>
     </div>
 
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-[45]"></div>
 
     <div id="share-modal" class="fixed inset-0 z-[110] items-center justify-center p-6 bg-black/95">
-        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative">
+        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative shadow-[0_0_60px_rgba(219,39,119,0.2)]">
             <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 text-[10px] font-bold uppercase">✕ Close</button>
             <h2 class="text-3xl font-black italic uppercase leading-none mb-2">Certified Failure</h2>
             <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-8 mt-4">
                 <div id="share-count" class="text-6xl font-black text-white">0</div>
-                <div class="text-[9px] uppercase font-bold text-gray-500 mt-2">Rejections</div>
+                <div class="text-[9px] uppercase font-bold text-gray-500 mt-2">Rejections Logged</div>
             </div>
             <button onclick="copyShareLink()" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs">Copy Stats</button>
         </div>
@@ -84,7 +82,17 @@
                     </div>
                 </div>
                 <div id="logged-in-view" class="hidden">
-                    <input type="text" id="username-input" onchange="updateUsername()" placeholder="Username" class="mb-2">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div id="avatar-circle" onclick="document.getElementById('avatar-upload').click()" class="bg-pink-900/30 border border-pink-600 flex items-center justify-center font-black text-pink-600">
+                            <img id="avatar-img" class="hidden"> <span id="avatar-letter">?</span>
+                            <div class="upload-overlay">EDIT</div>
+                        </div>
+                        <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(event)">
+                        <div class="text-left w-full">
+                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Username" class="mb-0 bg-transparent border-none p-0 font-bold text-white w-full">
+                            <p class="text-[9px] text-gray-500 uppercase" id="display-email"></p>
+                        </div>
+                    </div>
                     <button onclick="handleLogout()" class="w-full bg-red-900/10 text-red-500 py-2 rounded text-[10px] font-black uppercase">Logout</button>
                 </div>
             </div>
@@ -131,7 +139,7 @@
         <div class="flex justify-between items-end px-2">
             <div class="text-left">
                 <p id="counter" class="text-3xl font-black leading-none">0</p>
-                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Rejections</p>
+                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Rejections Logged</p>
             </div>
             <button onclick="toggleShareModal()" class="p-3 bg-gray-900 rounded-xl border border-gray-800 text-gray-400 hover:text-pink-600">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
@@ -141,18 +149,14 @@
     </footer>
 
     <script>
-        // 2. YOUR SUPABASE CREDENTIALS
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null, localCount = 0, activePack = 1, currentLang = 'nl-NL';
 
-        // UI LOGIC
-        window.toggleSidebar = () => { 
-            document.getElementById('sidebar').classList.toggle('open'); 
-            document.getElementById('overlay').classList.toggle('hidden'); 
-        };
+        // UI HELPERS
+        window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
         window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
         window.setPack = (id, lang) => { activePack = id; currentLang = lang; toggleSidebar(); };
         window.toggleShareModal = () => {
@@ -160,13 +164,23 @@
             document.getElementById('share-count').innerText = localCount;
         };
 
-        // AUDIO
-        document.getElementById('speakBtn').addEventListener('click', () => {
-            const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            utterance.lang = currentLang; window.speechSynthesis.speak(utterance);
-        });
+        // AVATAR DISPLAY
+        window.displayAvatar = (url) => {
+            const img = document.getElementById('avatar-img'); const lettr = document.getElementById('avatar-letter');
+            img.src = url; img.classList.remove('hidden'); lettr.classList.add('hidden');
+        };
 
-        // INIT & AUTH
+        // AVATAR UPLOAD
+        window.uploadAvatar = async (e) => {
+            const file = e.target.files[0]; if (!file || currentUser.is_anonymous) return alert("Sign up to upload an avatar!");
+            const path = `${currentUser.id}-${Date.now()}.${file.name.split('.').pop()}`;
+            await sb.storage.from('avatars').upload(path, file);
+            const { data } = sb.storage.from('avatars').getPublicUrl(path);
+            await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
+            displayAvatar(data.publicUrl);
+        };
+
+        // INIT & PROFILE
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) {
@@ -184,27 +198,29 @@
             const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
                 localCount = data.lifetime_clicks; updateStatsUI();
-                if (data.username) document.getElementById('username-input').value = data.username;
+                if (data.username) {
+                    document.getElementById('username-input').value = data.username;
+                    if (!data.avatar_url) document.getElementById('avatar-letter').innerText = data.username[0].toUpperCase();
+                }
+                if (data.avatar_url) displayAvatar(data.avatar_url);
             } else {
                 await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
             }
         }
 
-        // REALTIME TICKER
+        // REALTIME
         function subscribeToActivity() {
             sb.channel('public:profiles').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
                 const u = payload.new;
-                document.getElementById('global-ticker').innerText = `${u.username || 'Someone'} just reached ${u.lifetime_clicks} rejections! • `.repeat(5);
+                document.getElementById('global-ticker').innerText = `${u.username || 'Someone'} just hit ${u.lifetime_clicks} rejections! • `.repeat(5);
             }).subscribe();
         }
 
-        // MAIN ACTION
+        // ACTION
         document.getElementById('actionBtn').addEventListener('click', async () => {
             const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
             if (data?.length) {
                 const item = data[Math.floor(Math.random() * data.length)];
-                
-                // Animation
                 const msgCont = document.getElementById('message-container');
                 msgCont.classList.remove('animate-pop'); void msgCont.offsetWidth; msgCont.classList.add('animate-pop');
 
@@ -217,12 +233,18 @@
             }
         });
 
-        // LEADERBOARD, USERNAME, ETC
+        // REUSABLE LOGIC
         window.fetchLeaderboard = async () => {
-            const { data } = await sb.from('profiles').select('username, lifetime_clicks').order('lifetime_clicks', { ascending: false }).limit(5);
+            const { data } = await sb.from('profiles').select('username, lifetime_clicks, avatar_url').order('lifetime_clicks', { ascending: false }).limit(5);
             document.getElementById('leaderboard-list').innerHTML = (data || []).map((u, i) => `
                 <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
-                    <span>#${i+1} ${u.username || 'Anonymous'}</span>
+                    <div class="flex items-center gap-2">
+                        <span>#${i+1}</span>
+                        <div class="w-6 h-6 rounded-full bg-gray-800 overflow-hidden flex items-center justify-center">
+                            ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : `<span>${(u.username || '?')[0]}</span>`}
+                        </div>
+                        <span>${u.username || 'Anonymous'}</span>
+                    </div>
                     <span class="text-pink-600">${u.lifetime_clicks}</span>
                 </div>`).join('');
         };
@@ -230,6 +252,7 @@
         window.updateUsername = async () => {
             const name = document.getElementById('username-input').value;
             await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
+            if (!document.getElementById('avatar-img').src) document.getElementById('avatar-letter').innerText = name[0].toUpperCase();
         };
 
         window.handleAuth = async (type) => {
@@ -238,17 +261,12 @@
             if (error) alert(error.message); else window.location.reload();
         };
 
-        window.copyShareLink = () => {
-            const txt = `My failure rank is ${localCount} on KutApp.io! Join me in misery.`;
-            navigator.clipboard.writeText(txt).then(() => alert("Copied!"));
-        };
-
         window.handleLogout = async () => { await sb.auth.signOut(); window.location.reload(); };
         function updateStatsUI() { document.getElementById('counter').innerText = localCount; }
         function showLoggedIn(user) {
             document.getElementById('logged-out-view').classList.add('hidden');
             document.getElementById('logged-in-view').classList.remove('hidden');
-            document.getElementById('nav-dot')?.classList.remove('hidden');
+            document.getElementById('display-email').innerText = user.email;
         }
 
         init();
