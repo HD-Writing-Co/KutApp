@@ -22,25 +22,31 @@
         .upload-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; font-size: 8px; font-weight: 900; }
         #avatar-circle:hover .upload-overlay { opacity: 1; }
 
-        .modal-hidden { display: none; }
-        .certificate-bg { background: linear-gradient(45deg, #111, #000); border: 2px solid #db2777; }
+        /* Share Modal Styles */
+        #share-modal { display: none; } /* Explicitly hidden by default */
+        #share-modal.active { display: flex; }
+        .certificate-bg { background: linear-gradient(45deg, #0a0a0a, #000); border: 2px solid #db2777; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative">
 
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-40"></div>
 
-    <div id="share-modal" class="modal-hidden fixed inset-0 z-[60] flex items-center justify-center p-6 bg-black/90">
-        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative border-pink-600 shadow-[0_0_50px_rgba(219,39,119,0.3)]">
-            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 uppercase text-[10px] font-bold">✕</button>
-            <div class="text-pink-600 font-black text-xs tracking-[0.3em] uppercase mb-4">Official Certificate</div>
+    <div id="share-modal" class="fixed inset-0 z-[60] items-center justify-center p-6 bg-black/95">
+        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative border-pink-600 shadow-[0_0_60px_rgba(219,39,119,0.2)]">
+            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 uppercase text-[10px] font-bold">✕ Close</button>
+            <div class="text-pink-600 font-black text-[10px] tracking-[0.4em] uppercase mb-4">Verification of Misery</div>
             <h2 class="text-3xl font-black italic uppercase leading-none mb-2">Certified Failure</h2>
-            <p class="text-gray-400 text-xs mb-8 uppercase tracking-widest">Awarded to <span id="share-name" class="text-white font-bold">User</span></p>
-            <div class="bg-black/50 py-6 rounded-2xl border border-gray-800 mb-8">
-                <div id="share-count" class="text-5xl font-black text-white mb-1">0</div>
-                <div class="text-[9px] uppercase font-bold text-gray-500 tracking-tighter">Rejections Collected</div>
+            <p class="text-gray-400 text-[10px] mb-8 uppercase tracking-widest">Presented to <span id="share-name" class="text-white font-bold">User</span></p>
+            
+            <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-8">
+                <div id="share-count" class="text-6xl font-black text-white mb-1">0</div>
+                <div class="text-[9px] uppercase font-bold text-gray-500 tracking-widest">Rejections Logged</div>
             </div>
-            <button onclick="copyShareLink()" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest">Copy Share Link</button>
+
+            <button onclick="copyShareLink()" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest hover:bg-pink-500 transition-all active:scale-95">
+                Share Certificate
+            </button>
         </div>
     </div>
 
@@ -111,7 +117,7 @@
 
     <main class="text-center flex flex-grow flex-col justify-center items-center">
         <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
-        <p id="subtext" class="text-gray-500 text-lg mb-6">(Select a pack to begin)</p>
+        <p id="subtext" class="text-gray-500 text-lg mb-6 leading-tight max-w-xs">(Open the sidebar to select a language pack)</p>
         
         <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 hover:text-pink-600 transition-all">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -119,11 +125,16 @@
     </main>
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-8">
-        <div class="flex justify-between items-center px-2">
-            <p class="text-[10px] font-bold uppercase text-gray-600">Rejections: <span id="counter" class="text-white">0</span></p>
-            <button onclick="toggleShareModal()" class="text-[10px] font-bold uppercase text-pink-600 hover:text-pink-400">Share Rank</button>
+        <div class="flex justify-between items-end px-2">
+            <div class="text-left">
+                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Rejections</p>
+                <p id="counter" class="text-3xl font-black leading-none">0</p>
+            </div>
+            <button onclick="toggleShareModal()" class="p-3 bg-gray-900 rounded-xl border border-gray-800 text-gray-400 hover:text-pink-600 hover:border-pink-600 transition-all">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </button>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all">Keep Going</button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all shadow-xl active:scale-[0.98]">Keep Going</button>
     </footer>
 
     <script>
@@ -133,17 +144,19 @@
 
         let currentUser = null, localCount = 0, activePack = 1, currentLang = 'nl-NL';
 
-        // UI
+        // UI HELPERS
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
         window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
         window.setPack = (id, lang) => { activePack = id; currentLang = lang; toggleSidebar(); };
+        
         window.toggleShareModal = () => {
-            document.getElementById('share-modal').classList.toggle('modal-hidden');
+            const modal = document.getElementById('share-modal');
+            modal.classList.toggle('active');
             document.getElementById('share-name').innerText = document.getElementById('username-input').value || 'Anonymous Loser';
             document.getElementById('share-count').innerText = localCount;
         };
 
-        // AUDIO LOGIC
+        // AUDIO
         document.getElementById('speakBtn').addEventListener('click', () => {
             const msg = document.getElementById('message').innerText;
             const utterance = new SpeechSynthesisUtterance(msg);
@@ -151,7 +164,7 @@
             window.speechSynthesis.speak(utterance);
         });
 
-        // INITIALIZE & AUTH
+        // INIT
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) { const { data } = await sb.auth.signInAnonymously(); currentUser = data.user; } 
@@ -172,7 +185,6 @@
             } else { await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]); }
         }
 
-        // REMAINING LOGIC (UPLOAD, LEADERBOARD, AUTH)
         window.displayAvatar = (url) => {
             const img = document.getElementById('avatar-img');
             const letter = document.getElementById('avatar-letter');
@@ -181,7 +193,7 @@
 
         window.uploadAvatar = async (event) => {
             const file = event.target.files[0];
-            if (!file || currentUser.is_anonymous) return alert("Login to upload!");
+            if (!file || currentUser.is_anonymous) return alert("Sign up to upload an avatar!");
             const fileName = `${currentUser.id}-${Date.now()}.${file.name.split('.').pop()}`;
             await sb.storage.from('avatars').upload(fileName, file);
             const { data } = sb.storage.from('avatars').getPublicUrl(fileName);
@@ -191,7 +203,7 @@
 
         window.fetchLeaderboard = async () => {
             const { data } = await sb.from('profiles').select('username, lifetime_clicks, avatar_url').order('lifetime_clicks', { ascending: false }).limit(5);
-            document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
+            document.getElementById('leaderboard-list').innerHTML = (data || []).map((u, i) => `
                 <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
                     <div class="flex items-center gap-2">
                         <span class="${i === 0 ? 'rank-gold' : 'text-gray-500'}">#${i+1}</span>
@@ -204,10 +216,27 @@
                 </div>`).join('');
         };
 
+        window.copyShareLink = () => {
+            const text = `Collected ${localCount} rejections on KutApp.io. I am a certified failure. Join me: ${window.location.href}`;
+            if (navigator.share) {
+                navigator.share({ title: 'KutApp.io Rank', text: text, url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(text).then(() => alert("Stats copied!"));
+            }
+        };
+
         window.handleAuth = async (type) => {
             const email = document.getElementById('auth-email').value, pass = document.getElementById('auth-pass').value;
             const { error } = type === 'signup' ? await sb.auth.signUp({ email, password: pass }) : await sb.auth.signInWithPassword({ email, password: pass });
             if (error) alert(error.message); else window.location.reload();
+        };
+
+        window.updateUsername = async () => {
+            const name = document.getElementById('username-input').value;
+            await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
+            if (!document.getElementById('avatar-img').src) {
+                document.getElementById('avatar-letter').innerText = name ? name[0].toUpperCase() : "?";
+            }
         };
 
         window.handleLogout = async () => { await sb.auth.signOut(); window.location.reload(); };
