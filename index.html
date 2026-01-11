@@ -8,64 +8,70 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; }
+        
+        /* Sidebar & Layout */
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); }
         .sidebar.open { transform: translateX(0); }
         input { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 800px; }
-        .rank-gold { color: #ffd700; }
         
-        #avatar-circle { cursor: pointer; position: relative; overflow: hidden; transition: 0.3s; }
-        #avatar-circle:hover { border-color: #db2777; }
+        /* Animations */
+        @keyframes insultPop {
+            0% { transform: scale(0.9); opacity: 0; filter: blur(5px); }
+            100% { transform: scale(1); opacity: 1; filter: blur(0); }
+        }
+        .animate-pop { animation: insultPop 0.2s ease-out forwards; }
+
+        @keyframes ticker {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+        .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 15s linear infinite; }
+
+        /* Ticker UI */
+        .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
+        .live-dot { height: 6px; width: 6px; background: #db2777; border-radius: 50%; box-shadow: 0 0 8px #db2777; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        /* Share Modal */
+        #share-modal { display: none; }
+        #share-modal.active { display: flex; }
+        .certificate-bg { background: linear-gradient(45deg, #0a0a0a, #000); border: 2px solid #db2777; }
+        
+        /* Avatar */
+        #avatar-circle { cursor: pointer; position: relative; overflow: hidden; }
         #avatar-img { width: 100%; height: 100%; object-fit: cover; }
         .upload-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; font-size: 8px; font-weight: 900; }
         #avatar-circle:hover .upload-overlay { opacity: 1; }
-
-        /* Share Modal Styles */
-        #share-modal { display: none; } /* Explicitly hidden by default */
-        #share-modal.active { display: flex; }
-        .certificate-bg { background: linear-gradient(45deg, #0a0a0a, #000); border: 2px solid #db2777; }
-		
-		@keyframes insultPop {
-			0% { transform: scale(0.8); opacity: 0; filter: blur(10px); }
-			70% { transform: scale(1.05); }
-			100% { transform: scale(1); opacity: 1; filter: blur(0); }
-		}
-
-		.animate-pop {
-			animation: insultPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-		}
-
-		.milestone-flash {
-			animation: flash 1s ease-in-out infinite;
-		}
-
-		@keyframes flash {
-			0%, 100% { color: #ffffff; }
-			50% { color: #db2777; text-shadow: 0 0 20px #db2777; }
-		}
     </style>
 </head>
-<body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative">
+<body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
+
+    <div class="ticker-wrap">
+        <div class="flex items-center px-4 border-r border-gray-800 bg-[#0a0a0a] z-10 h-full gap-2">
+            <span class="live-dot"></span>
+            <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">Live</span>
+        </div>
+        <div id="global-ticker" class="ticker-move text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+            Welcome to KutApp.io • Start clicking to see activity...
+        </div>
+    </div>
 
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-40"></div>
 
     <div id="share-modal" class="fixed inset-0 z-[60] items-center justify-center p-6 bg-black/95">
-        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative border-pink-600 shadow-[0_0_60px_rgba(219,39,119,0.2)]">
-            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 uppercase text-[10px] font-bold">✕ Close</button>
-            <div class="text-pink-600 font-black text-[10px] tracking-[0.4em] uppercase mb-4">Verification of Misery</div>
+        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative shadow-[0_0_60px_rgba(219,39,119,0.2)]">
+            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 text-[10px] font-bold uppercase">✕ Close</button>
+            <div class="text-pink-600 font-black text-[10px] tracking-[0.4em] uppercase mb-4">Official Verification</div>
             <h2 class="text-3xl font-black italic uppercase leading-none mb-2">Certified Failure</h2>
-            <p class="text-gray-400 text-[10px] mb-8 uppercase tracking-widest">Presented to <span id="share-name" class="text-white font-bold">User</span></p>
-            
+            <p class="text-gray-400 text-[10px] mb-8 uppercase tracking-widest">Awarded to <span id="share-name" class="text-white font-bold">User</span></p>
             <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-8">
-                <div id="share-count" class="text-6xl font-black text-white mb-1">0</div>
-                <div class="text-[9px] uppercase font-bold text-gray-500 tracking-widest">Rejections Logged</div>
+                <div id="share-count" class="text-6xl font-black text-white">0</div>
+                <div class="text-[9px] uppercase font-bold text-gray-500 tracking-widest mt-2">Rejections Logged</div>
             </div>
-
-            <button onclick="copyShareLink()" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest hover:bg-pink-500 transition-all active:scale-95">
-                Share Certificate
-            </button>
+            <button onclick="copyShareLink()" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest hover:bg-pink-500 active:scale-95 transition-all">Copy Share Text</button>
         </div>
     </div>
 
@@ -74,8 +80,7 @@
         
         <div class="mb-4">
             <button onclick="toggleAccordion('acc-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-black uppercase tracking-widest text-pink-600">
-                <span>User Dashboard</span>
-                <span>↓</span>
+                <span>Dashboard</span> <span>↓</span>
             </button>
             <div id="acc-content" class="accordion-content open pt-4">
                 <div id="logged-out-view">
@@ -88,14 +93,13 @@
                 </div>
                 <div id="logged-in-view" class="hidden">
                     <div class="flex items-center gap-3 mb-6">
-                        <div id="avatar-circle" onclick="document.getElementById('avatar-upload').click()" class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600 relative">
-                            <img id="avatar-img" class="hidden">
-                            <span id="avatar-letter">?</span>
-                            <div class="upload-overlay uppercase">Upload</div>
+                        <div id="avatar-circle" onclick="document.getElementById('avatar-upload').click()" class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600">
+                            <img id="avatar-img" class="hidden"> <span id="avatar-letter">?</span>
+                            <div class="upload-overlay">EDIT</div>
                         </div>
                         <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(event)">
                         <div class="text-left">
-                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Set Username" class="mb-0 py-1 bg-transparent border-none p-0 font-bold text-white cursor-pointer">
+                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Username" class="mb-0 py-1 bg-transparent border-none p-0 font-bold text-white">
                             <p class="text-[9px] text-gray-500 uppercase" id="display-email"></p>
                         </div>
                     </div>
@@ -106,8 +110,7 @@
 
         <div class="mb-4">
             <button onclick="fetchLeaderboard(); toggleAccordion('lead-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest">
-                <span>Top Losers</span>
-                <span>↓</span>
+                <span>Leaderboard</span> <span>↓</span>
             </button>
             <div id="lead-content" class="accordion-content pt-4">
                 <div id="leaderboard-list" class="flex flex-col gap-3"></div>
@@ -116,8 +119,7 @@
 
         <div class="mb-4">
             <button onclick="toggleAccordion('pack-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest">
-                <span>Language Packs</span>
-                <span>↓</span>
+                <span>Languages</span> <span>↓</span>
             </button>
             <div id="pack-content" class="accordion-content pt-4 flex flex-col gap-2">
                 <button onclick="setPack(1, 'nl-NL')" class="text-left p-3 rounded-lg bg-gray-900 text-xs font-bold uppercase">🇳🇱 Dutch Basics</button>
@@ -135,9 +137,10 @@
     </header>
 
     <main class="text-center flex flex-grow flex-col justify-center items-center">
-        <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
-        <p id="subtext" class="text-gray-500 text-lg mb-6 leading-tight max-w-xs">(Open the sidebar to select a language pack)</p>
-        
+        <div id="message-container">
+            <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
+            <p id="subtext" class="text-gray-500 text-lg mb-6 leading-tight max-w-xs">(Open sidebar to start)</p>
+        </div>
         <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 hover:text-pink-600 transition-all">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         </button>
@@ -146,36 +149,16 @@
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-8">
         <div class="flex justify-between items-end px-2">
             <div class="text-left">
-                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Rejections</p>
+                <p id="milestone-badge" class="hidden text-[8px] bg-pink-600 text-white px-2 py-0.5 rounded font-black uppercase mb-1">Beginner</p>
+                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Total Rejections</p>
                 <p id="counter" class="text-3xl font-black leading-none">0</p>
             </div>
             <button onclick="toggleShareModal()" class="p-3 bg-gray-900 rounded-xl border border-gray-800 text-gray-400 hover:text-pink-600 hover:border-pink-600 transition-all">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             </button>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all shadow-xl active:scale-[0.98]">Keep Going</button>
-    
-		<main class="text-center flex flex-grow flex-col justify-center items-center">
-			<div id="message-container" class="max-w-xl px-4">
-				<h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
-				<p id="subtext" class="text-gray-500 text-lg mb-6 leading-tight">(Select a pack to begin)</p>
-			</div>
-    
-			<button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 hover:text-pink-600 transition-all">
-				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-			</button>
-		</main>
-
-		<div class="text-left flex items-center gap-4">
-			<div>
-				<p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Rejections</p>
-				<p id="counter" class="text-3xl font-black leading-none transition-all duration-300">0</p>
-			</div>
-		<div id="milestone-badge" class="hidden text-[10px] bg-pink-600 text-white px-2 py-1 rounded font-black uppercase tracking-tighter">
-			Novice Loser
-		</div>
-	</div>
-	</footer>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all active:scale-[0.98]">Keep Going</button>
+    </footer>
 
     <script>
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
@@ -184,24 +167,20 @@
 
         let currentUser = null, localCount = 0, activePack = 1, currentLang = 'nl-NL';
 
-        // UI HELPERS
+        // HELPERS
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
         window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
         window.setPack = (id, lang) => { activePack = id; currentLang = lang; toggleSidebar(); };
-        
         window.toggleShareModal = () => {
-            const modal = document.getElementById('share-modal');
-            modal.classList.toggle('active');
-            document.getElementById('share-name').innerText = document.getElementById('username-input').value || 'Anonymous Loser';
+            const m = document.getElementById('share-modal'); m.classList.toggle('active');
+            document.getElementById('share-name').innerText = document.getElementById('username-input').value || 'Anonymous';
             document.getElementById('share-count').innerText = localCount;
         };
 
         // AUDIO
         document.getElementById('speakBtn').addEventListener('click', () => {
-            const msg = document.getElementById('message').innerText;
-            const utterance = new SpeechSynthesisUtterance(msg);
-            utterance.lang = currentLang;
-            window.speechSynthesis.speak(utterance);
+            const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
+            utterance.lang = currentLang; window.speechSynthesis.speak(utterance);
         });
 
         // INIT
@@ -210,158 +189,22 @@
             if (!session) { const { data } = await sb.auth.signInAnonymously(); currentUser = data.user; } 
             else { currentUser = session.user; if (!currentUser.is_anonymous) showLoggedIn(currentUser); }
             loadProfile();
+            subscribeToActivity();
         }
 
         async function loadProfile() {
             const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
-                localCount = data.lifetime_clicks;
+                localCount = data.lifetime_clicks; updateStatsUI();
                 if (data.avatar_url) displayAvatar(data.avatar_url);
                 if (data.username) {
                     document.getElementById('username-input').value = data.username;
                     if (!data.avatar_url) document.getElementById('avatar-letter').innerText = data.username[0].toUpperCase();
                 }
-                updateStatsUI();
+                handleMilestones(localCount);
             } else { await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]); }
         }
 
-        window.displayAvatar = (url) => {
-            const img = document.getElementById('avatar-img');
-            const letter = document.getElementById('avatar-letter');
-            
-			if (url) {
-				img.onload = () => {
-					img.classList.remove('hidden');
-					letter.classList.add('hidden');
-				};
-				img.onerror = () => {
-					console.error("Failed to load image at:", url);
-					img.classList.add('hidden');
-					letter.classList.remove('hidden');
-					letter.innerText = "!"; // Show error state
-				};
-				img.src = url;
-			}
-        };
-
-        window.uploadAvatar = async (event) => {
-            const file = event.target.files[0];
-            if (!file || currentUser.is_anonymous) return alert("Sign up to upload an avatar!");
-            const fileName = `${currentUser.id}-${Date.now()}.${file.name.split('.').pop()}`;
-            await sb.storage.from('avatars').upload(fileName, file);
-            const { data } = sb.storage.from('avatars').getPublicUrl(fileName);
-            await sb.from('profiles').update({ avatar_url: data.publicUrl }).eq('id', currentUser.id);
-            displayAvatar(data.publicUrl);
-        };
-
-        window.fetchLeaderboard = async () => {
-            const { data } = await sb.from('profiles').select('username, lifetime_clicks, avatar_url').order('lifetime_clicks', { ascending: false }).limit(5);
-            document.getElementById('leaderboard-list').innerHTML = (data || []).map((u, i) => `
-                <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
-                    <div class="flex items-center gap-2">
-                        <span class="${i === 0 ? 'rank-gold' : 'text-gray-500'}">#${i+1}</span>
-                        <div class="w-6 h-6 rounded-full bg-gray-800 overflow-hidden flex items-center justify-center">
-                            ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : `<span>${(u.username || '?')[0]}</span>`}
-                        </div>
-                        <span>${u.username || 'Anonymous'}</span>
-                    </div>
-                    <span class="text-pink-600">${u.lifetime_clicks}</span>
-                </div>`).join('');
-        };
-
-        window.copyShareLink = () => {
-            const text = `Collected ${localCount} rejections on KutApp.io. I am a certified failure. Join me: ${window.location.href}`;
-            if (navigator.share) {
-                navigator.share({ title: 'KutApp.io Rank', text: text, url: window.location.href });
-            } else {
-                navigator.clipboard.writeText(text).then(() => alert("Stats copied!"));
-            }
-        };
-
-        window.handleAuth = async (type) => {
-            const email = document.getElementById('auth-email').value, pass = document.getElementById('auth-pass').value;
-            const { error } = type === 'signup' ? await sb.auth.signUp({ email, password: pass }) : await sb.auth.signInWithPassword({ email, password: pass });
-            if (error) alert(error.message); else window.location.reload();
-        };
-
-        window.updateUsername = async () => {
-            const name = document.getElementById('username-input').value;
-            await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
-            if (!document.getElementById('avatar-img').src) {
-                document.getElementById('avatar-letter').innerText = name ? name[0].toUpperCase() : "?";
-            }
-        };
-
-        window.handleLogout = async () => { await sb.auth.signOut(); window.location.reload(); };
-
-        document.getElementById('actionBtn').addEventListener('click', async () => {
-            const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
-            if (data?.length) {
-                const item = data[Math.floor(Math.random() * data.length)];
-                document.getElementById('message').innerText = item.content;
-                document.getElementById('subtext').innerText = `(${item.translation})`;
-                document.getElementById('speakBtn').classList.remove('hidden');
-                localCount++; updateStatsUI();
-                await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
-            }
-        });
-
-        function updateStatsUI() { document.getElementById('counter').innerText = localCount; }
-        function showLoggedIn(user) {
-            document.getElementById('logged-out-view').classList.add('hidden');
-            document.getElementById('logged-in-view').classList.remove('hidden');
-            document.getElementById('display-email').innerText = user.email;
-            document.getElementById('nav-dot').classList.remove('hidden');
-        }
-
-        init();
-		
-		document.getElementById('actionBtn').addEventListener('click', async () => {
-			// 1. Visual button feedback
-			const btn = document.getElementById('actionBtn');
-			btn.style.transform = 'scale(0.95)';
-			setTimeout(() => btn.style.transform = 'scale(1)', 100);
-
-			const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
-			if (data?.length) {
-				const item = data[Math.floor(Math.random() * data.length)];
-        
-				// 2. Animate text entrance
-				const container = document.getElementById('message-container');
-				container.classList.remove('animate-pop');
-				void container.offsetWidth; // Trigger reflow to restart animation
-				container.classList.add('animate-pop');
-
-				document.getElementById('message').innerText = item.content;
-				document.getElementById('subtext').innerText = `(${item.translation})`;
-				document.getElementById('speakBtn').classList.remove('hidden');
-        
-				localCount++; 
-				updateStatsUI();
-				handleMilestones(localCount);
-        
-				await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
-			}
-		});
-
-		function handleMilestones(count) {
-			const badge = document.getElementById('milestone-badge');
-			const counterText = document.getElementById('counter');
-    
-			badge.classList.remove('hidden');
-    
-			if (count >= 100) {
-				badge.innerText = "Ultimate Failure";
-				counterText.classList.add('milestone-flash');
-			} else if (count >= 50) {
-				badge.innerText = "Consistent Loser";
-				badge.style.backgroundColor = "#db2777";
-			} else if (count >= 10) {
-				badge.innerText = "Getting Shamed";
-			} else {
-				badge.classList.add('hidden');
-			}
-		}
-    </script>
-</body>
-</html>
+        // REALTIME TICKER
+        function subscribeToActivity() {
+            sb.channel('public:profiles').on('postgres_changes', { event:
