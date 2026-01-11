@@ -38,18 +38,15 @@
         <div id="status-tag" class="text-[10px] uppercase font-black text-pink-600 mb-6 tracking-[0.3em] border border-pink-900/30 px-3 py-1 rounded-full">
             Initializing...
         </div>
-        
         <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic leading-none transition-all duration-200">
             Go Away.
         </h1>
-        
         <p id="subtext" class="text-gray-500 text-lg font-medium max-w-sm leading-relaxed">
             (Loading your misery...)
         </p>
     </main>
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-4">
-        
         <div class="flex flex-col gap-2">
             <label class="text-[10px] uppercase text-gray-600 font-black tracking-widest text-center">Rejection Pack</label>
             <select id="packSelect" class="bg-gray-900 border border-gray-800 text-white p-4 rounded-xl text-sm focus:outline-none appearance-none text-center cursor-pointer hover:border-gray-600">
@@ -78,21 +75,23 @@
     </footer>
 
     <script>
+        // Use your actual Project URL and Anon Key here
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
         let localCount = 0;
 
-        // --- AUTH & PERSISTENCE ---
-
         async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
+            const { data: { session } } = await supabaseClient.auth.getSession();
             
             if (!session) {
-                // Anonymous login (No UI pop-up, happens in background)
-                const { data } = await supabase.auth.signInAnonymously();
+                const { data, error } = await supabaseClient.auth.signInAnonymously();
+                if (error) {
+                    console.error("Auth Error:", error.message);
+                    return;
+                }
                 currentUser = data.user;
             } else {
                 currentUser = session.user;
@@ -105,33 +104,79 @@
         }
 
         async function loadData() {
-            const { data } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
+            const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
                 localCount = data.lifetime_clicks;
                 updateStatsUI();
             } else {
-                await supabase.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
+                await supabaseClient.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
             }
             document.getElementById('status-tag').innerText = "System Live";
             document.getElementById('subtext').innerText = "(Click to begin your dismissal)";
         }
 
-        async function secureAccount() {
+        // --- EXPOSED FUNCTIONS (Must be globally accessible) ---
+        
+        window.secureAccount = async function() {
             const email = prompt("Enter email to save progress:");
-            const pass = prompt("Create a password:");
+            const pass = prompt("Create a password (min 6 chars):");
             if (!email || !pass) return;
 
-            // This converts the anonymous user into a permanent user
-            const { error } = await supabase.auth.updateUser({ email: email, password: pass });
+            const { error } = await supabaseClient.auth.updateUser({ email: email, password: pass });
             
-            if (error) alert("Error: " + error.message);
-            else alert("Account linked! Check your email for a confirmation link.");
+            if (error) {
+                alert("Error: " + error.message);
+            } else {
+                alert("Account linked! Check your email for a confirmation link.");
+                document.getElementById('auth-status').innerText = "Confirming Email...";
+            }
         }
 
-        // --- GAMEPLAY ---
-
-        async function handleRejection() {
+        window.handleRejection = async function() {
             const packId = document.getElementById('packSelect').value;
-            const { data } = await supabase.from('phrases').select('*').eq('pack_id', packId);
+            const { data, error } = await supabaseClient.from('phrases').select('*').eq('pack_id', packId);
 
-            if (data
+            if (error) {
+                console.error("DB Error:", error.message);
+                return;
+            }
+
+            if (data && data.length > 0) {
+                const item = data[Math.floor(Math.random() * data.length)];
+                document.getElementById('message').innerText = item.content;
+                document.getElementById('subtext').innerText = `(${item.translation})`;
+                
+                localCount++;
+                updateStatsUI();
+                
+                // Save to database
+                await supabaseClient.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
+                
+                // Visual Flair
+                const msgEl = document.getElementById('message');
+                msgEl.classList.add('glitch');
+                setTimeout(() => msgEl.classList.remove('glitch'), 150);
+            }
+        }
+
+        function updateStatsUI() {
+            document.getElementById('counter').innerText = localCount;
+            const ranks = ["Disposable Human", "Professional Nuisance", "Advanced Failure", "Local Legend", "Grand Master of Rejection"];
+            const rankIndex = Math.min(Math.floor(localCount / 25), ranks.length - 1);
+            document.getElementById('user-rank').innerText = "Rank: " + ranks[rankIndex];
+
+            if (localCount > 0 && localCount % 25 === 0) {
+                document.getElementById('status-tag').innerText = "LEVEL UP: " + ranks[rankIndex];
+                document.getElementById('status-tag').classList.add('level-up');
+                document.body.classList.add('shake');
+                setTimeout(() => {
+                    document.getElementById('status-tag').classList.remove('level-up');
+                    document.body.classList.remove('shake');
+                }, 2000);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
