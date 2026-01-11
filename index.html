@@ -57,13 +57,13 @@
         </div>
 
         <div class="flex flex-col gap-3">
-            <button onclick="handleRejection()" id="actionBtn" class="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase tracking-tight active:scale-95">
+            <button id="actionBtn" class="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase tracking-tight active:scale-95">
                 Keep Going
             </button>
             
             <div id="auth-ui" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 text-center">
                 <p id="auth-status" class="text-[9px] text-gray-500 uppercase mb-2">Progress saved locally</p>
-                <button id="link-btn" onclick="secureAccount()" class="text-[10px] font-black text-pink-600 uppercase hover:text-pink-400">
+                <button id="link-btn" class="text-[10px] font-black text-pink-600 uppercase hover:text-pink-400">
                     Link Email to Save Forever
                 </button>
             </div>
@@ -75,32 +75,35 @@
     </footer>
 
     <script>
-        // Use your actual Project URL and Anon Key here
+        // --- 1. CONFIGURATION ---
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; // PASTE YOUR KEY HERE
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
         let localCount = 0;
 
+        // --- 2. STARTUP LOGIC ---
         async function init() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            
-            if (!session) {
-                const { data, error } = await supabaseClient.auth.signInAnonymously();
-                if (error) {
-                    console.error("Auth Error:", error.message);
-                    return;
+            try {
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                
+                if (!session) {
+                    const { data, error } = await supabaseClient.auth.signInAnonymously();
+                    if (error) throw error;
+                    currentUser = data.user;
+                } else {
+                    currentUser = session.user;
+                    if (!currentUser.is_anonymous) {
+                        document.getElementById('auth-status').innerText = "Account Secured: " + currentUser.email;
+                        document.getElementById('link-btn').classList.add('hidden');
+                    }
                 }
-                currentUser = data.user;
-            } else {
-                currentUser = session.user;
-                if (!currentUser.is_anonymous) {
-                    document.getElementById('auth-status').innerText = "Account Secured: " + currentUser.email;
-                    document.getElementById('link-btn').classList.add('hidden');
-                }
+                await loadData();
+            } catch (err) {
+                console.error("Initialization failed:", err.message);
+                document.getElementById('status-tag').innerText = "Connection Failed";
             }
-            loadData();
         }
 
         async function loadData() {
@@ -115,31 +118,10 @@
             document.getElementById('subtext').innerText = "(Click to begin your dismissal)";
         }
 
-        // --- EXPOSED FUNCTIONS (Must be globally accessible) ---
-        
-        window.secureAccount = async function() {
-            const email = prompt("Enter email to save progress:");
-            const pass = prompt("Create a password (min 6 chars):");
-            if (!email || !pass) return;
-
-            const { error } = await supabaseClient.auth.updateUser({ email: email, password: pass });
-            
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                alert("Account linked! Check your email for a confirmation link.");
-                document.getElementById('auth-status').innerText = "Confirming Email...";
-            }
-        }
-
-        window.handleRejection = async function() {
+        // --- 3. ACTIONS ---
+        const handleRejection = async () => {
             const packId = document.getElementById('packSelect').value;
             const { data, error } = await supabaseClient.from('phrases').select('*').eq('pack_id', packId);
-
-            if (error) {
-                console.error("DB Error:", error.message);
-                return;
-            }
 
             if (data && data.length > 0) {
                 const item = data[Math.floor(Math.random() * data.length)];
@@ -149,16 +131,27 @@
                 localCount++;
                 updateStatsUI();
                 
-                // Save to database
+                // Sync to DB
                 await supabaseClient.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
                 
-                // Visual Flair
+                // FX
                 const msgEl = document.getElementById('message');
                 msgEl.classList.add('glitch');
                 setTimeout(() => msgEl.classList.remove('glitch'), 150);
             }
-        }
+        };
 
+        const secureAccount = async () => {
+            const email = prompt("Enter email to save progress:");
+            const pass = prompt("Create a password (min 6 chars):");
+            if (!email || !pass) return;
+
+            const { error } = await supabaseClient.auth.updateUser({ email: email, password: pass });
+            if (error) alert("Error: " + error.message);
+            else alert("Linked! Check your email for a confirmation link.");
+        };
+
+        // --- 4. UI HELPERS ---
         function updateStatsUI() {
             document.getElementById('counter').innerText = localCount;
             const ranks = ["Disposable Human", "Professional Nuisance", "Advanced Failure", "Local Legend", "Grand Master of Rejection"];
@@ -175,6 +168,10 @@
                 }, 2000);
             }
         }
+
+        // --- 5. EVENT LISTENERS (Reliable way to attach functions) ---
+        document.getElementById('actionBtn').addEventListener('click', handleRejection);
+        document.getElementById('link-btn').addEventListener('click', secureAccount);
 
         init();
     </script>
