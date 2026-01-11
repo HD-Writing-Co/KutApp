@@ -11,15 +11,10 @@
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; transition: all 0.3s; }
         .glitch { text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
         .shake { animation: shake 0.4s; }
-        @keyframes shake {
-            0% { transform: translate(1px, 1px); }
-            20% { transform: translate(-3px, 0px); }
-            40% { transform: translate(3px, 2px); }
-            60% { transform: translate(-1px, -1px); }
-            100% { transform: translate(0, 0); }
-        }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 20% { transform: translate(-3px, 0px); } 100% { transform: translate(0, 0); } }
         .level-up { animation: pulse 1.5s infinite; color: #db2777; font-weight: 900; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        input { background: #111; border: 1px solid #333; color: white; padding: 8px; border-radius: 8px; width: 100%; font-size: 12px; margin-bottom: 8px; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 overflow-hidden">
@@ -27,7 +22,7 @@
     <header class="w-full flex justify-between items-center max-w-4xl">
         <div class="flex flex-col">
             <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
-            <div id="user-rank" class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-bold">Rank: Disposable Human</div>
+            <div id="user-rank" class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-bold italic">Rank: Disposable Human</div>
         </div>
         <div class="text-[10px] uppercase tracking-widest text-gray-500 font-bold text-right">
             Rejections: <span id="counter" class="text-white bg-gray-900 px-2 py-1 rounded">0</span>
@@ -35,143 +30,113 @@
     </header>
 
     <main class="text-center flex flex-col items-center justify-center flex-grow max-w-2xl">
-        <div id="status-tag" class="text-[10px] uppercase font-black text-pink-600 mb-6 tracking-[0.3em] border border-pink-900/30 px-3 py-1 rounded-full">
-            Initializing...
-        </div>
-        <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic leading-none transition-all duration-200">
-            Go Away.
-        </h1>
-        <p id="subtext" class="text-gray-500 text-lg font-medium max-w-sm leading-relaxed">
-            (Loading your misery...)
-        </p>
+        <div id="status-tag" class="text-[10px] uppercase font-black text-pink-600 mb-6 tracking-[0.3em] border border-pink-900/30 px-3 py-1 rounded-full">Initializing...</div>
+        <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic leading-none transition-all duration-200">Go Away.</h1>
+        <p id="subtext" class="text-gray-500 text-lg font-medium max-w-sm leading-relaxed">(Loading misery...)</p>
     </main>
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-4">
-        <div class="flex flex-col gap-2">
-            <label class="text-[10px] uppercase text-gray-600 font-black tracking-widest text-center">Rejection Pack</label>
-            <select id="packSelect" class="bg-gray-900 border border-gray-800 text-white p-4 rounded-xl text-sm focus:outline-none appearance-none text-center cursor-pointer hover:border-gray-600">
-                <option value="1">Dutch Basics (Free)</option>
-                <option value="2">English Blunt (Free)</option>
-                <option value="3">Corporate Passive (Free)</option>
-            </select>
-        </div>
+        <select id="packSelect" class="bg-gray-900 border border-gray-800 text-white p-4 rounded-xl text-sm focus:outline-none text-center cursor-pointer">
+            <option value="1">Dutch Basics</option>
+            <option value="2">English Blunt</option>
+            <option value="3">Corporate Passive</option>
+        </select>
 
-        <div class="flex flex-col gap-3">
-            <button id="actionBtn" class="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase tracking-tight active:scale-95">
-                Keep Going
-            </button>
-            
-            <div id="auth-ui" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 text-center">
-                <p id="auth-status" class="text-[9px] text-gray-500 uppercase mb-2">Progress saved locally</p>
-                <button id="link-btn" class="text-[10px] font-black text-pink-600 uppercase hover:text-pink-400">
-                    Link Email to Save Forever
-                </button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase active:scale-95">Keep Going</button>
+        
+        <div id="auth-ui" class="bg-gray-900/50 p-4 rounded-xl border border-gray-800 text-center">
+            <div id="guest-view">
+                <p id="auth-status" class="text-[9px] text-gray-500 uppercase mb-2">Playing as Guest</p>
+                <button onclick="secureAccount()" class="text-[10px] font-black text-pink-600 uppercase mr-4">Link Email</button>
+                <button onclick="toggleAuth(true)" class="text-[10px] font-black text-gray-400 uppercase">Returning User? Login</button>
             </div>
 
-            <button onclick="window.location.href='https://google.com'" class="w-full text-gray-700 hover:text-white py-2 transition-all text-[10px] font-bold uppercase tracking-widest">
-                I've had enough
-            </button>
+            <div id="login-view" class="hidden">
+                <input type="email" id="login-email" placeholder="Email">
+                <input type="password" id="login-pass" placeholder="Password">
+                <div class="flex gap-2">
+                    <button id="login-submit-btn" class="w-1/2 bg-pink-600 text-white text-[10px] font-bold py-2 rounded uppercase">Login</button>
+                    <button onclick="toggleAuth(false)" class="w-1/2 bg-gray-800 text-gray-400 text-[10px] font-bold py-2 rounded uppercase">Cancel</button>
+                </div>
+            </div>
         </div>
+
+        <button onclick="window.location.href='https://google.com'" class="text-gray-700 hover:text-white py-2 text-[10px] font-bold uppercase tracking-widest">I've had enough</button>
     </footer>
 
     <script>
-        // --- 1. CONFIGURATION ---
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; // PASTE YOUR KEY HERE
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
         let localCount = 0;
 
-        // --- 2. STARTUP LOGIC ---
         async function init() {
-            try {
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                
-                if (!session) {
-                    const { data, error } = await supabaseClient.auth.signInAnonymously();
-                    if (error) throw error;
-                    currentUser = data.user;
-                } else {
-                    currentUser = session.user;
-                    if (!currentUser.is_anonymous) {
-                        document.getElementById('auth-status').innerText = "Account Secured: " + currentUser.email;
-                        document.getElementById('link-btn').classList.add('hidden');
-                    }
-                }
-                await loadData();
-            } catch (err) {
-                console.error("Initialization failed:", err.message);
-                document.getElementById('status-tag').innerText = "Connection Failed";
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) {
+                const { data } = await supabaseClient.auth.signInAnonymously();
+                currentUser = data.user;
+            } else {
+                currentUser = session.user;
+                if (!currentUser.is_anonymous) showLoggedInState();
             }
+            loadData();
         }
 
         async function loadData() {
-            const { data, error } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
-            if (data) {
-                localCount = data.lifetime_clicks;
-                updateStatsUI();
-            } else {
-                await supabaseClient.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
-            }
+            const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            if (data) { localCount = data.lifetime_clicks; updateStatsUI(); }
+            else { await supabaseClient.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]); }
             document.getElementById('status-tag').innerText = "System Live";
-            document.getElementById('subtext').innerText = "(Click to begin your dismissal)";
         }
 
-        // --- 3. ACTIONS ---
-        const handleRejection = async () => {
-            const packId = document.getElementById('packSelect').value;
-            const { data, error } = await supabaseClient.from('phrases').select('*').eq('pack_id', packId);
+        window.toggleAuth = (showLogin) => {
+            document.getElementById('guest-view').classList.toggle('hidden', showLogin);
+            document.getElementById('login-view').classList.toggle('hidden', !showLogin);
+        };
 
+        window.secureAccount = async () => {
+            const email = prompt("Enter email:");
+            const pass = prompt("Create password (min 6 chars):");
+            if (email && pass) {
+                const { error } = await supabaseClient.auth.updateUser({ email, password: pass });
+                if (error) alert(error.message);
+                else alert("Linked! Check email for confirmation.");
+            }
+        };
+
+        document.getElementById('login-submit-btn').addEventListener('click', async () => {
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-pass').value;
+            const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            if (error) alert(error.message);
+            else window.location.reload();
+        });
+
+        document.getElementById('actionBtn').addEventListener('click', async () => {
+            const packId = document.getElementById('packSelect').value;
+            const { data } = await supabaseClient.from('phrases').select('*').eq('pack_id', packId);
             if (data && data.length > 0) {
                 const item = data[Math.floor(Math.random() * data.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = `(${item.translation})`;
-                
-                localCount++;
-                updateStatsUI();
-                
-                // Sync to DB
+                localCount++; updateStatsUI();
                 await supabaseClient.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
-                
-                // FX
-                const msgEl = document.getElementById('message');
-                msgEl.classList.add('glitch');
-                setTimeout(() => msgEl.classList.remove('glitch'), 150);
             }
-        };
+        });
 
-        const secureAccount = async () => {
-            const email = prompt("Enter email to save progress:");
-            const pass = prompt("Create a password (min 6 chars):");
-            if (!email || !pass) return;
-
-            const { error } = await supabaseClient.auth.updateUser({ email: email, password: pass });
-            if (error) alert("Error: " + error.message);
-            else alert("Linked! Check your email for a confirmation link.");
-        };
-
-        // --- 4. UI HELPERS ---
         function updateStatsUI() {
             document.getElementById('counter').innerText = localCount;
-            const ranks = ["Disposable Human", "Professional Nuisance", "Advanced Failure", "Local Legend", "Grand Master of Rejection"];
-            const rankIndex = Math.min(Math.floor(localCount / 25), ranks.length - 1);
-            document.getElementById('user-rank').innerText = "Rank: " + ranks[rankIndex];
-
-            if (localCount > 0 && localCount % 25 === 0) {
-                document.getElementById('status-tag').innerText = "LEVEL UP: " + ranks[rankIndex];
-                document.getElementById('status-tag').classList.add('level-up');
-                document.body.classList.add('shake');
-                setTimeout(() => {
-                    document.getElementById('status-tag').classList.remove('level-up');
-                    document.body.classList.remove('shake');
-                }, 2000);
-            }
+            const ranks = ["Disposable Human", "Professional Nuisance", "Advanced Failure", "Local Legend", "Grand Master"];
+            const rIdx = Math.min(Math.floor(localCount / 25), ranks.length - 1);
+            document.getElementById('user-rank').innerText = "Rank: " + ranks[rIdx];
         }
 
-        // --- 5. EVENT LISTENERS (Reliable way to attach functions) ---
-        document.getElementById('actionBtn').addEventListener('click', handleRejection);
-        document.getElementById('link-btn').addEventListener('click', secureAccount);
+        function showLoggedInState() {
+            document.getElementById('auth-status').innerText = "Secured: " + currentUser.email;
+            document.getElementById('guest-view').innerHTML = `<button onclick="supabaseClient.auth.signOut().then(()=>location.reload())" class="text-[9px] text-gray-500 uppercase underline">Logout</button>`;
+        }
 
         init();
     </script>
