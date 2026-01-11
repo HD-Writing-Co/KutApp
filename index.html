@@ -26,6 +26,25 @@
         #share-modal { display: none; } /* Explicitly hidden by default */
         #share-modal.active { display: flex; }
         .certificate-bg { background: linear-gradient(45deg, #0a0a0a, #000); border: 2px solid #db2777; }
+		
+		@keyframes insultPop {
+			0% { transform: scale(0.8); opacity: 0; filter: blur(10px); }
+			70% { transform: scale(1.05); }
+			100% { transform: scale(1); opacity: 1; filter: blur(0); }
+		}
+
+		.animate-pop {
+			animation: insultPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+		}
+
+		.milestone-flash {
+			animation: flash 1s ease-in-out infinite;
+		}
+
+		@keyframes flash {
+			0%, 100% { color: #ffffff; }
+			50% { color: #db2777; text-shadow: 0 0 20px #db2777; }
+		}
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative">
@@ -135,7 +154,28 @@
             </button>
         </div>
         <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all shadow-xl active:scale-[0.98]">Keep Going</button>
-    </footer>
+    
+		<main class="text-center flex flex-grow flex-col justify-center items-center">
+			<div id="message-container" class="max-w-xl px-4">
+				<h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
+				<p id="subtext" class="text-gray-500 text-lg mb-6 leading-tight">(Select a pack to begin)</p>
+			</div>
+    
+			<button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 hover:text-pink-600 transition-all">
+				<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+			</button>
+		</main>
+
+		<div class="text-left flex items-center gap-4">
+			<div>
+				<p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Rejections</p>
+				<p id="counter" class="text-3xl font-black leading-none transition-all duration-300">0</p>
+			</div>
+		<div id="milestone-badge" class="hidden text-[10px] bg-pink-600 text-white px-2 py-1 rounded font-black uppercase tracking-tighter">
+			Novice Loser
+		</div>
+	</div>
+	</footer>
 
     <script>
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
@@ -275,6 +315,53 @@
         }
 
         init();
+		
+		document.getElementById('actionBtn').addEventListener('click', async () => {
+			// 1. Visual button feedback
+			const btn = document.getElementById('actionBtn');
+			btn.style.transform = 'scale(0.95)';
+			setTimeout(() => btn.style.transform = 'scale(1)', 100);
+
+			const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
+			if (data?.length) {
+				const item = data[Math.floor(Math.random() * data.length)];
+        
+				// 2. Animate text entrance
+				const container = document.getElementById('message-container');
+				container.classList.remove('animate-pop');
+				void container.offsetWidth; // Trigger reflow to restart animation
+				container.classList.add('animate-pop');
+
+				document.getElementById('message').innerText = item.content;
+				document.getElementById('subtext').innerText = `(${item.translation})`;
+				document.getElementById('speakBtn').classList.remove('hidden');
+        
+				localCount++; 
+				updateStatsUI();
+				handleMilestones(localCount);
+        
+				await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
+			}
+		});
+
+		function handleMilestones(count) {
+			const badge = document.getElementById('milestone-badge');
+			const counterText = document.getElementById('counter');
+    
+			badge.classList.remove('hidden');
+    
+			if (count >= 100) {
+				badge.innerText = "Ultimate Failure";
+				counterText.classList.add('milestone-flash');
+			} else if (count >= 50) {
+				badge.innerText = "Consistent Loser";
+				badge.style.backgroundColor = "#db2777";
+			} else if (count >= 10) {
+				badge.innerText = "Getting Shamed";
+			} else {
+				badge.classList.add('hidden');
+			}
+		}
     </script>
 </body>
 </html>
