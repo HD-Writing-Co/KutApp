@@ -31,7 +31,7 @@
 
     <main class="text-center flex flex-col items-center justify-center flex-grow max-w-2xl">
         <div id="status-tag" class="text-[10px] uppercase font-black text-pink-600 mb-6 tracking-[0.3em] border border-pink-900/30 px-3 py-1 rounded-full">
-            System Standby
+            Initializing...
         </div>
         
         <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic leading-none transition-all duration-200">
@@ -55,7 +55,14 @@
             </select>
         </div>
 
-        <div class="flex flex-col gap-3">
+		<div id="auth-section" class="hidden flex flex-col gap-2 border-t border-gray-800 pt-4 mt-2">
+			<p class="text-[10px] text-gray-500 uppercase text-center">Save progress across devices</p>
+				<button onclick="linkAccount()" class="text-xs font-bold text-pink-600 hover:text-white transition-all">
+				Link Email Address
+				</button>
+		</div>
+       
+	   <div class="flex flex-col gap-3">
             <button onclick="handleRejection()" id="actionBtn" class="w-full bg-white text-black font-black py-5 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase tracking-tight active:scale-95">
                 Keep Going
             </button>
@@ -66,14 +73,67 @@
     </footer>
 
     <script>
-        // 1. YOUR API CONFIGURATION
-        const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co'; // Paste your URL here
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; // Paste your anon public key here
+        const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; // Keep your key safe!
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+        let currentUser = null;
         let localCount = 0;
 
-        // 2. MAIN LOGIC
+        // --- SESSION & DATA PERSISTENCE ---
+
+        async function initSession() {
+            // Check for existing session
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            if (!session) {
+                // Sign in anonymously if no session exists
+                const { data, error } = await supabaseClient.auth.signInAnonymously();
+                if (error) {
+                    console.error("Auth Error:", error.message);
+                    document.getElementById('status-tag').innerText = "Offline Mode";
+                    return;
+                }
+                currentUser = data.user;
+            } else {
+                currentUser = session.user;
+            }
+
+            // Load user profile data
+            await loadProfile();
+        }
+
+        async function loadProfile() {
+            if (!currentUser) return;
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('lifetime_clicks')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (data) {
+                localCount = data.lifetime_clicks;
+                document.getElementById('counter').innerText = localCount;
+                document.getElementById('status-tag').innerText = "System Ready";
+            } else {
+                // Create profile if it doesn't exist
+                await supabaseClient.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
+                document.getElementById('status-tag').innerText = "New Loser Detected";
+            }
+        }
+
+        async function syncProgress() {
+            if (!currentUser) return;
+            
+            await supabaseClient
+                .from('profiles')
+                .update({ lifetime_clicks: localCount })
+                .eq('id', currentUser.id);
+        }
+
+        // --- CORE APP LOGIC ---
+
         async function handleRejection() {
             const packId = document.getElementById('packSelect').value;
             
@@ -82,7 +142,6 @@
                 return;
             }
 
-            // Fetch a random phrase from the database for the selected pack
             const { data, error } = await supabaseClient
                 .from('phrases')
                 .select('content, translation')
@@ -90,37 +149,24 @@
 
             if (error) {
                 console.error("Database Error:", error.message);
-                document.getElementById('message').innerText = "CONNECTION ERROR";
-                document.getElementById('subtext').innerText = "Database rejected your request (ironic).";
                 return;
             }
 
             if (data && data.length > 0) {
-                // Pick a random one from the results
                 const randomItem = data[Math.floor(Math.random() * data.length)];
-                
-                // Update the visual content
                 updateUI(randomItem.content, randomItem.translation);
-                
-                // Trigger gamification effects
                 trackProgress();
-            } else {
-                document.getElementById('message').innerText = "EMPTY PACK";
-                document.getElementById('subtext').innerText = "Add some insults to your Supabase table.";
             }
         }
 
-        // 3. UI UPDATES
         function updateUI(content, translation) {
             const msgEl = document.getElementById('message');
             msgEl.innerText = content;
             document.getElementById('subtext').innerText = `(${translation})`;
             
-            // Glitch effect
             msgEl.classList.add('glitch');
             setTimeout(() => msgEl.classList.remove('glitch'), 150);
 
-            // Severity Shake
             if (localCount > 10) {
                 document.body.classList.add('shake');
                 setTimeout(() => document.body.classList.remove('shake'), 400);
@@ -132,12 +178,17 @@
             document.getElementById('counter').innerText = localCount;
             document.getElementById('status-tag').innerText = "Processing Rejection " + localCount;
             
-            // Every 5 clicks, change the button text slightly to be meaner
             const btn = document.getElementById('actionBtn');
             if (localCount === 5) btn.innerText = "Still here?";
             if (localCount === 10) btn.innerText = "Don't you have a life?";
             if (localCount === 20) btn.innerText = "Okay, this is sad now.";
+
+            // Sync with Supabase
+            syncProgress();
         }
+
+        // Initialize on load
+        initSession();
     </script>
 </body>
 </html>
