@@ -11,58 +11,69 @@
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; }
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); }
         .sidebar.open { transform: translateX(0); }
-        .glitch { text-shadow: 2px 0 #ff00c1, -2px 0 #00fff9; }
-        input { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; }
+        input { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
+        input:focus { border-color: #db2777; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
-        .accordion-content.open { max-height: 500px; }
+        .accordion-content.open { max-height: 800px; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative">
 
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-40"></div>
 
-    <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 z-50 p-6 flex flex-col">
+    <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 z-50 p-6 flex flex-col overflow-y-auto">
         <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
         
-        <h2 class="text-xs font-black uppercase tracking-[0.3em] text-pink-600 mb-6">User Terminal</h2>
-
         <div class="mb-4">
-            <button onclick="toggleAccordion('acc-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest">
-                <span>Account</span>
-                <span id="acc-arrow">↓</span>
+            <button onclick="toggleAccordion('acc-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-black uppercase tracking-widest text-pink-600">
+                <span>User Dashboard</span>
+                <span>↓</span>
             </button>
-            <div id="acc-content" class="accordion-content pt-4">
+            <div id="acc-content" class="accordion-content open pt-4">
+                
                 <div id="logged-out-view">
-                    <p class="text-[10px] text-gray-500 mb-4 uppercase">Playing as guest. Progress is temporary.</p>
-                    <input type="email" id="login-email" placeholder="Email">
-                    <input type="password" id="login-pass" placeholder="Password">
-                    <button id="login-btn" class="w-full bg-white text-black py-3 rounded-lg font-black text-xs uppercase mb-2">Login</button>
-                    <button onclick="secureAccount()" class="w-full text-pink-600 py-2 font-bold text-[10px] uppercase">Create / Link Account</button>
+                    <p class="text-[10px] text-gray-500 mb-4 uppercase">Login to save your misery</p>
+                    <input type="email" id="auth-email" placeholder="Email">
+                    <input type="password" id="auth-pass" placeholder="Password">
+                    <div class="flex gap-2">
+                        <button onclick="handleAuth('login')" class="w-1/2 bg-white text-black py-2 rounded-lg font-black text-[10px] uppercase">Login</button>
+                        <button onclick="handleAuth('signup')" class="w-1/2 border border-gray-700 text-white py-2 rounded-lg font-black text-[10px] uppercase">Sign Up</button>
+                    </div>
                 </div>
-                <div id="logged-in-view" class="hidden text-center">
-                    <p id="user-email-display" class="text-xs text-gray-400 mb-4"></p>
-                    <button onclick="handleLogout()" class="w-full bg-red-900/20 text-red-500 border border-red-900/30 py-3 rounded-lg font-black text-xs uppercase">Logout</button>
+
+                <div id="logged-in-view" class="hidden">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600" id="avatar-circle">?</div>
+                        <div class="text-left">
+                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Set Username" class="mb-0 py-1 bg-transparent border-none p-0 font-bold text-white hover:bg-gray-900 cursor-pointer">
+                            <p class="text-[9px] text-gray-500 uppercase tracking-widest" id="display-email"></p>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800 mb-4">
+                        <h4 class="text-[9px] font-black uppercase text-gray-500 mb-3 tracking-widest">Achievements</h4>
+                        <div id="achievements" class="flex flex-col gap-2">
+                            <div class="text-[10px] flex justify-between opacity-30"><span>First Dismissal</span> <span>[✓]</span></div>
+                            <div class="text-[10px] flex justify-between opacity-30"><span>Annoying Local</span> <span>[ ]</span></div>
+                            <div class="text-[10px] flex justify-between opacity-30"><span>Master Failure</span> <span>[ ]</span></div>
+                        </div>
+                    </div>
+
+                    <button onclick="handleLogout()" class="w-full bg-red-900/10 text-red-500 border border-red-900/20 py-2 rounded text-[10px] font-black uppercase">Logout</button>
                 </div>
             </div>
         </div>
 
         <div class="mb-4">
-            <button onclick="toggleAccordion('pack-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest text-white">
-                <span>Packs</span>
+            <button onclick="toggleAccordion('pack-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest">
+                <span>Content Packs</span>
                 <span>↓</span>
             </button>
             <div id="pack-content" class="accordion-content pt-4 flex flex-col gap-2">
                 <button onclick="setPack(1)" class="text-left p-3 rounded-lg bg-gray-900 hover:bg-gray-800 text-xs uppercase font-bold">🇳🇱 Dutch Basics</button>
                 <button onclick="setPack(2)" class="text-left p-3 rounded-lg bg-gray-900 hover:bg-gray-800 text-xs uppercase font-bold">🇬🇧 English Blunt</button>
                 <button onclick="setPack(3)" class="text-left p-3 rounded-lg bg-gray-900 hover:bg-gray-800 text-xs uppercase font-bold">🏢 Corporate Passive</button>
-                <div class="opacity-30 p-3 rounded-lg border border-dashed border-gray-700 text-[10px] uppercase font-bold mt-2">
-                    🔒 More coming soon...
-                </div>
             </div>
-        </div>
-
-        <div class="mt-auto">
-            <button onclick="window.location.href='https://google.com'" class="text-[10px] text-gray-600 uppercase font-bold hover:text-white">Emergency Exit (Google)</button>
         </div>
     </aside>
 
@@ -71,52 +82,45 @@
             <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
             <div id="user-rank" class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-bold">Rank: Disposable Human</div>
         </div>
-        <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600 transition-all">
+        <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600 transition-all relative">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            <span id="nav-dot" class="absolute top-2 right-2 w-2 h-2 bg-pink-600 rounded-full hidden"></span>
         </button>
     </header>
 
     <main class="text-center flex flex-col items-center justify-center flex-grow max-w-2xl">
-        <div id="status-tag" class="text-[10px] uppercase font-black text-pink-600 mb-6 tracking-[0.3em] border border-pink-900/30 px-3 py-1 rounded-full">System Live</div>
+        <div id="status-tag" class="text-[10px] uppercase font-black text-pink-600 mb-6 tracking-[0.3em] border border-pink-900/30 px-3 py-1 rounded-full italic">System Online</div>
         <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic leading-none transition-all duration-200">Welcome.</h1>
-        <p id="subtext" class="text-gray-500 text-lg font-medium max-w-sm leading-relaxed">(Select a pack in the menu)</p>
+        <p id="subtext" class="text-gray-500 text-lg font-medium max-w-sm leading-relaxed">(Select a pack in the terminal)</p>
     </main>
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-8">
         <div class="text-[10px] uppercase tracking-widest text-gray-600 font-bold text-center mb-2">
-            Rejections Collected: <span id="counter" class="text-white">0</span>
+            Rejections: <span id="counter" class="text-white">0</span>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase tracking-tight active:scale-95 shadow-2xl">
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase active:scale-95 shadow-2xl">
             Keep Going
         </button>
     </footer>
 
     <script>
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
         let localCount = 0;
         let activePack = 1;
 
-        // UI HELPERS
+        // UI
         window.toggleSidebar = () => {
             document.getElementById('sidebar').classList.toggle('open');
             document.getElementById('overlay').classList.toggle('hidden');
         };
+        window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
+        window.setPack = (id) => { activePack = id; toggleSidebar(); };
 
-        window.toggleAccordion = (id) => {
-            document.getElementById(id).classList.toggle('open');
-        };
-
-        window.setPack = (id) => {
-            activePack = id;
-            toggleSidebar();
-            document.getElementById('status-tag').innerText = "Pack Updated";
-        };
-
-        // AUTH LOGIC
+        // INITIALIZE
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) {
@@ -124,7 +128,7 @@
                 currentUser = data.user;
             } else {
                 currentUser = session.user;
-                if (!currentUser.is_anonymous) showLoggedIn(currentUser.email);
+                if (!currentUser.is_anonymous) showLoggedIn(currentUser);
             }
             loadProfile();
         }
@@ -133,34 +137,39 @@
             const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
                 localCount = data.lifetime_clicks;
+                if (data.username) {
+                    document.getElementById('username-input').value = data.username;
+                    document.getElementById('avatar-circle').innerText = data.username[0].toUpperCase();
+                }
                 updateStatsUI();
             } else {
                 await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
             }
         }
 
-        window.secureAccount = async () => {
-            const email = prompt("Email:");
-            const pass = prompt("Password (min 6):");
-            if (email && pass) {
-                const { error } = await sb.auth.updateUser({ email, password: pass });
+        // AUTH HANDLERS
+        window.handleAuth = async (type) => {
+            const email = document.getElementById('auth-email').value;
+            const pass = document.getElementById('auth-pass').value;
+            
+            if (type === 'signup') {
+                const { error } = await sb.auth.signUp({ email, password: pass });
                 if (error) alert(error.message);
-                else alert("Check your email to confirm!");
+                else alert("Signup successful! Link your account by checking email or just refresh.");
+            } else {
+                const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+                if (error) alert("Error: " + error.message);
+                else window.location.reload();
             }
         };
 
-        document.getElementById('login-btn').addEventListener('click', async () => {
-            const email = document.getElementById('login-email').value;
-            const pass = document.getElementById('login-pass').value;
-            const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-            if (error) alert(error.message);
-            else window.location.reload();
-        });
-
-        window.handleLogout = async () => {
-            await sb.auth.signOut();
-            window.location.reload();
+        window.updateUsername = async () => {
+            const newName = document.getElementById('username-input').value;
+            await sb.from('profiles').update({ username: newName }).eq('id', currentUser.id);
+            document.getElementById('avatar-circle').innerText = newName[0].toUpperCase();
         };
+
+        window.handleLogout = async () => { await sb.auth.signOut(); window.location.reload(); };
 
         // GAMEPLAY
         document.getElementById('actionBtn').addEventListener('click', async () => {
@@ -180,12 +189,17 @@
             const ranks = ["Disposable", "Nuisance", "Advanced Failure", "Legend", "Grand Master"];
             const rIdx = Math.min(Math.floor(localCount / 25), ranks.length - 1);
             document.getElementById('user-rank').innerText = "Rank: " + ranks[rIdx];
+            
+            // Achievement Visuals
+            if (localCount >= 1) document.getElementById('achievements').children[0].classList.remove('opacity-30');
+            if (localCount >= 50) document.getElementById('achievements').children[1].classList.remove('opacity-30');
         }
 
-        function showLoggedIn(email) {
+        function showLoggedIn(user) {
             document.getElementById('logged-out-view').classList.add('hidden');
             document.getElementById('logged-in-view').classList.remove('hidden');
-            document.getElementById('user-email-display').innerText = email;
+            document.getElementById('display-email').innerText = user.email;
+            document.getElementById('nav-dot').classList.remove('hidden'); // Show dot when logged in
         }
 
         init();
