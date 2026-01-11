@@ -12,9 +12,9 @@
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); }
         .sidebar.open { transform: translateX(0); }
         input { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
-        input:focus { border-color: #db2777; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 800px; }
+        .rank-gold { color: #ffd700; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative">
@@ -30,9 +30,7 @@
                 <span>↓</span>
             </button>
             <div id="acc-content" class="accordion-content open pt-4">
-                
                 <div id="logged-out-view">
-                    <p class="text-[10px] text-gray-500 mb-4 uppercase">Login to save your misery</p>
                     <input type="email" id="auth-email" placeholder="Email">
                     <input type="password" id="auth-pass" placeholder="Password">
                     <div class="flex gap-2">
@@ -46,61 +44,54 @@
                         <div class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600" id="avatar-circle">?</div>
                         <div class="text-left">
                             <input type="text" id="username-input" onchange="updateUsername()" placeholder="Set Username" class="mb-0 py-1 bg-transparent border-none p-0 font-bold text-white hover:bg-gray-900 cursor-pointer">
-                            <p class="text-[9px] text-gray-500 uppercase tracking-widest" id="display-email"></p>
+                            <p class="text-[9px] text-gray-500 uppercase" id="display-email"></p>
                         </div>
                     </div>
+                    <button onclick="handleLogout()" class="w-full bg-red-900/10 text-red-500 py-2 rounded text-[10px] font-black uppercase">Logout</button>
+                </div>
+            </div>
+        </div>
 
-                    <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800 mb-4">
-                        <h4 class="text-[9px] font-black uppercase text-gray-500 mb-3 tracking-widest">Achievements</h4>
-                        <div id="achievements" class="flex flex-col gap-2">
-                            <div class="text-[10px] flex justify-between opacity-30"><span>First Dismissal</span> <span>[✓]</span></div>
-                            <div class="text-[10px] flex justify-between opacity-30"><span>Annoying Local</span> <span>[ ]</span></div>
-                            <div class="text-[10px] flex justify-between opacity-30"><span>Master Failure</span> <span>[ ]</span></div>
-                        </div>
-                    </div>
-
-                    <button onclick="handleLogout()" class="w-full bg-red-900/10 text-red-500 border border-red-900/20 py-2 rounded text-[10px] font-black uppercase">Logout</button>
+        <div class="mb-4">
+            <button onclick="fetchLeaderboard(); toggleAccordion('lead-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest">
+                <span>Top Losers</span>
+                <span>↓</span>
+            </button>
+            <div id="lead-content" class="accordion-content pt-4">
+                <div id="leaderboard-list" class="flex flex-col gap-3">
+                    <p class="text-[10px] text-gray-600 italic text-center">Loading rankings...</p>
                 </div>
             </div>
         </div>
 
         <div class="mb-4">
             <button onclick="toggleAccordion('pack-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest">
-                <span>Content Packs</span>
+                <span>Packs</span>
                 <span>↓</span>
             </button>
             <div id="pack-content" class="accordion-content pt-4 flex flex-col gap-2">
-                <button onclick="setPack(1)" class="text-left p-3 rounded-lg bg-gray-900 hover:bg-gray-800 text-xs uppercase font-bold">🇳🇱 Dutch Basics</button>
-                <button onclick="setPack(2)" class="text-left p-3 rounded-lg bg-gray-900 hover:bg-gray-800 text-xs uppercase font-bold">🇬🇧 English Blunt</button>
-                <button onclick="setPack(3)" class="text-left p-3 rounded-lg bg-gray-900 hover:bg-gray-800 text-xs uppercase font-bold">🏢 Corporate Passive</button>
+                <button onclick="setPack(1)" class="text-left p-3 rounded-lg bg-gray-900 text-xs font-bold uppercase">🇳🇱 Dutch Basics</button>
+                <button onclick="setPack(2)" class="text-left p-3 rounded-lg bg-gray-900 text-xs font-bold uppercase">🇬🇧 English Blunt</button>
             </div>
         </div>
     </aside>
 
     <header class="w-full flex justify-between items-center max-w-4xl">
-        <div class="flex flex-col">
-            <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
-            <div id="user-rank" class="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-bold">Rank: Disposable Human</div>
-        </div>
+        <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
         <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600 transition-all relative">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             <span id="nav-dot" class="absolute top-2 right-2 w-2 h-2 bg-pink-600 rounded-full hidden"></span>
         </button>
     </header>
 
-    <main class="text-center flex flex-col items-center justify-center flex-grow max-w-2xl">
-        <div id="status-tag" class="text-[10px] uppercase font-black text-pink-600 mb-6 tracking-[0.3em] border border-pink-900/30 px-3 py-1 rounded-full italic">System Online</div>
-        <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic leading-none transition-all duration-200">Welcome.</h1>
-        <p id="subtext" class="text-gray-500 text-lg font-medium max-w-sm leading-relaxed">(Select a pack in the terminal)</p>
+    <main class="text-center flex flex-grow flex-col justify-center">
+        <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
+        <p id="subtext" class="text-gray-500 text-lg">(Open terminal to start)</p>
     </main>
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-8">
-        <div class="text-[10px] uppercase tracking-widest text-gray-600 font-bold text-center mb-2">
-            Rejections: <span id="counter" class="text-white">0</span>
-        </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white transition-all uppercase active:scale-95 shadow-2xl">
-            Keep Going
-        </button>
+        <p class="text-[10px] text-center font-bold uppercase text-gray-600">Rejections: <span id="counter" class="text-white">0</span></p>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all">Keep Going</button>
     </footer>
 
     <script>
@@ -113,10 +104,7 @@
         let activePack = 1;
 
         // UI
-        window.toggleSidebar = () => {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('overlay').classList.toggle('hidden');
-        };
+        window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
         window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
         window.setPack = (id) => { activePack = id; toggleSidebar(); };
 
@@ -147,59 +135,49 @@
             }
         }
 
-        // AUTH HANDLERS
+        window.fetchLeaderboard = async () => {
+            const { data } = await sb.from('profiles').select('username, lifetime_clicks').order('lifetime_clicks', { ascending: false }).limit(5);
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = data.map((user, i) => `
+                <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
+                    <span class="${i === 0 ? 'rank-gold' : 'text-gray-500'}">#${i+1} ${user.username || 'Anonymous'}</span>
+                    <span class="text-pink-600">${user.lifetime_clicks}</span>
+                </div>
+            `).join('');
+        };
+
         window.handleAuth = async (type) => {
             const email = document.getElementById('auth-email').value;
             const pass = document.getElementById('auth-pass').value;
-            
-            if (type === 'signup') {
-                const { error } = await sb.auth.signUp({ email, password: pass });
-                if (error) alert(error.message);
-                else alert("Signup successful! Link your account by checking email or just refresh.");
-            } else {
-                const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-                if (error) alert("Error: " + error.message);
-                else window.location.reload();
-            }
+            const { error } = type === 'signup' ? await sb.auth.signUp({ email, password: pass }) : await sb.auth.signInWithPassword({ email, password: pass });
+            if (error) alert(error.message); else window.location.reload();
         };
 
         window.updateUsername = async () => {
-            const newName = document.getElementById('username-input').value;
-            await sb.from('profiles').update({ username: newName }).eq('id', currentUser.id);
-            document.getElementById('avatar-circle').innerText = newName[0].toUpperCase();
+            const name = document.getElementById('username-input').value;
+            await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
+            document.getElementById('avatar-circle').innerText = name[0].toUpperCase();
         };
 
         window.handleLogout = async () => { await sb.auth.signOut(); window.location.reload(); };
 
-        // GAMEPLAY
         document.getElementById('actionBtn').addEventListener('click', async () => {
             const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
             if (data && data.length > 0) {
                 const item = data[Math.floor(Math.random() * data.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = `(${item.translation})`;
-                localCount++;
-                updateStatsUI();
+                localCount++; updateStatsUI();
                 await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
             }
         });
 
-        function updateStatsUI() {
-            document.getElementById('counter').innerText = localCount;
-            const ranks = ["Disposable", "Nuisance", "Advanced Failure", "Legend", "Grand Master"];
-            const rIdx = Math.min(Math.floor(localCount / 25), ranks.length - 1);
-            document.getElementById('user-rank').innerText = "Rank: " + ranks[rIdx];
-            
-            // Achievement Visuals
-            if (localCount >= 1) document.getElementById('achievements').children[0].classList.remove('opacity-30');
-            if (localCount >= 50) document.getElementById('achievements').children[1].classList.remove('opacity-30');
-        }
-
+        function updateStatsUI() { document.getElementById('counter').innerText = localCount; }
         function showLoggedIn(user) {
             document.getElementById('logged-out-view').classList.add('hidden');
             document.getElementById('logged-in-view').classList.remove('hidden');
             document.getElementById('display-email').innerText = user.email;
-            document.getElementById('nav-dot').classList.remove('hidden'); // Show dot when logged in
+            document.getElementById('nav-dot').classList.remove('hidden');
         }
 
         init();
