@@ -186,6 +186,25 @@
             // Sync with Supabase
             syncProgress();
         }
+		
+			// Account Login
+		async function linkAccount() {
+			const email = prompt("Enter your email to save your rejections forever:");
+			const password = prompt("Create a password:");
+
+			if (email && password) {
+			const { data, error } = await supabaseClient.auth.updateUser({
+            email: email,
+            password: password
+			});
+
+			if (error) {
+				alert("Error linking account: " + error.message);
+			} else {
+				alert("Account secured! You can now log in from any device.");
+				}
+			}
+		}
 
         // Initialize on load
         initSession();
