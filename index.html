@@ -6,19 +6,17 @@
     <title>KutApp.io | Get Lost</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; }
         
-        /* Sidebar & Layout */
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
         input { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 800px; }
-        .rank-gold { color: #ffd700; text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
         
-        /* High Visibility Ticker */
         .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
         .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 20s linear infinite; color: #ffffff; font-weight: 900; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
@@ -26,13 +24,11 @@
         .live-dot { height: 6px; width: 6px; background: #db2777; border-radius: 50%; box-shadow: 0 0 8px #db2777; animation: pulse 1.5s infinite; }
         @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-        /* Avatar Styling */
         #avatar-circle { cursor: pointer; position: relative; overflow: hidden; width: 48px; height: 48px; border-radius: 9999px; }
         #avatar-img { width: 100%; height: 100%; object-fit: cover; }
         .upload-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.3s; font-size: 8px; font-weight: 900; }
         #avatar-circle:hover .upload-overlay { opacity: 1; }
 
-        /* Animations & Modals */
         @keyframes insultPop { 0% { transform: scale(0.9); opacity: 0; filter: blur(5px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
         .animate-pop { animation: insultPop 0.2s ease-out forwards; }
         #share-modal { display: none; }
@@ -55,7 +51,7 @@
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-[45]"></div>
 
     <div id="share-modal" class="fixed inset-0 z-[110] items-center justify-center p-6 bg-black/95">
-        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative">
+        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative shadow-[0_0_60px_rgba(219,39,119,0.2)]">
             <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 text-[10px] font-bold uppercase">✕ Close</button>
             <h2 class="text-3xl font-black italic uppercase leading-none mb-2">Certified Failure</h2>
             <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-8 mt-4">
@@ -156,6 +152,37 @@
 
         let currentUser = null, localCount = 0, activePack = 1, currentLang = 'nl-NL';
 
+        // MILESTONE AUDIO (SYNTHESIZED)
+        const playDing = () => {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(880, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.5);
+            osc.start(); osc.stop(ctx.currentTime + 0.5);
+        };
+
+        // CORRECTED PRONUNCIATION LOGIC
+        document.getElementById('speakBtn').addEventListener('click', () => {
+            const msg = document.getElementById('message').innerText;
+            if (!msg || msg === "Welcome.") return;
+            
+            window.speechSynthesis.cancel(); // Stop current speech
+            const utterance = new SpeechSynthesisUtterance(msg);
+            
+            // Try to find a native Dutch voice specifically
+            const voices = window.speechSynthesis.getVoices();
+            const dutchVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
+            if (dutchVoice) utterance.voice = dutchVoice;
+            
+            utterance.lang = currentLang;
+            utterance.rate = 0.9; // Slightly slower for clarity
+            utterance.pitch = 1.0;
+            window.speechSynthesis.speak(utterance);
+        });
+
         // UI HELPERS
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
         window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
@@ -165,17 +192,6 @@
             document.getElementById('share-count').innerText = localCount;
         };
 
-        // AUDIO - Restoration: Ensure ID matches the HTML button
-        document.getElementById('speakBtn').addEventListener('click', () => {
-            const msg = document.getElementById('message').innerText;
-            if (msg && msg !== "Welcome.") {
-                const utterance = new SpeechSynthesisUtterance(msg);
-                utterance.lang = currentLang;
-                window.speechSynthesis.speak(utterance);
-            }
-        });
-
-        // AVATAR DISPLAY & UPLOAD
         window.displayAvatar = (url) => {
             const img = document.getElementById('avatar-img'); const lettr = document.getElementById('avatar-letter');
             img.src = url; img.classList.remove('hidden'); lettr.classList.add('hidden');
@@ -190,7 +206,6 @@
             displayAvatar(data.publicUrl);
         };
 
-        // INIT & PROFILE
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) {
@@ -202,6 +217,8 @@
             }
             loadProfile();
             subscribeToActivity();
+            // Pre-load voices
+            window.speechSynthesis.getVoices();
         }
 
         async function loadProfile() {
@@ -218,16 +235,13 @@
             }
         }
 
-        // REALTIME TICKER
         function subscribeToActivity() {
             sb.channel('public:profiles').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
                 const u = payload.new;
-                const tickerMsg = `${u.username || 'Someone'} just hit ${u.lifetime_clicks} rejections! • `.repeat(5);
-                document.getElementById('global-ticker').innerText = tickerMsg;
+                document.getElementById('global-ticker').innerText = `${u.username || 'Someone'} just hit ${u.lifetime_clicks} rejections! • `.repeat(5);
             }).subscribe();
         }
 
-        // ACTION BUTTON
         document.getElementById('actionBtn').addEventListener('click', async () => {
             const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
             if (data?.length) {
@@ -237,20 +251,26 @@
 
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = `(${item.translation})`;
-                document.getElementById('speakBtn').classList.remove('hidden'); // Show speaker after phrase loads
+                document.getElementById('speakBtn').classList.remove('hidden');
                 
                 localCount++; updateStatsUI();
+                
+                // CELEBRATION LOGIC
+                if (localCount === 10 || localCount === 50 || localCount === 100) {
+                    playDing();
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#db2777', '#ffffff'] });
+                }
+
                 await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
             }
         });
 
-        // LEADERBOARD & AUTH
         window.fetchLeaderboard = async () => {
             const { data } = await sb.from('profiles').select('username, lifetime_clicks, avatar_url').order('lifetime_clicks', { ascending: false }).limit(5);
             document.getElementById('leaderboard-list').innerHTML = (data || []).map((u, i) => `
                 <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
                     <div class="flex items-center gap-2">
-                        <span class="${i === 0 ? 'rank-gold' : ''}">#${i+1}</span>
+                        <span class="${i === 0 ? 'text-yellow-500' : ''}">#${i+1}</span>
                         <div class="w-6 h-6 rounded-full bg-gray-800 overflow-hidden flex items-center justify-center">
                             ${u.avatar_url ? `<img src="${u.avatar_url}" class="w-full h-full object-cover">` : `<span>${(u.username || '?')[0]}</span>`}
                         </div>
