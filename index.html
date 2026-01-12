@@ -21,7 +21,6 @@
         }
         .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
 
-        /* Notification Toast */
         #level-toast {
             position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
             background: #db2777; color: white; padding: 12px 24px; border-radius: 50px;
@@ -74,11 +73,32 @@
             <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">LIVE</span>
         </div>
         <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest font-black">
-            Welcome to KutApp.io • Level up to unlock new rewards • Press and hold to claim packs •
+            Welcome to KutApp.io • Connect your profile to save progress • Claim your spot in the Hall of Shame •
         </div>
     </div>
 
     <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45]"></div>
+
+    <div id="profile-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Your Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div class="flex flex-col gap-4">
+            <div class="flex items-center gap-4 bg-gray-900 p-4 rounded-xl border border-gray-800">
+                <div class="relative group cursor-pointer" onclick="document.getElementById('avatar-upload').click()">
+                    <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" class="w-16 h-16 rounded-full border-2 border-pink-600">
+                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">📸</div>
+                </div>
+                <input type="file" id="avatar-upload" class="hidden" accept="image/*">
+                <div class="flex-grow">
+                    <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-2 rounded w-full text-sm font-bold" placeholder="New Username">
+                    <button onclick="updateProfile()" class="mt-2 text-[10px] font-black uppercase text-pink-600">Save Changes</button>
+                </div>
+            </div>
+            <div id="auth-section" class="flex flex-col gap-2 pt-4 border-t border-gray-900">
+                <p class="text-[10px] text-gray-500 uppercase font-black">Account Status: <span id="auth-status">Guest</span></p>
+                <button onclick="handleAuth()" id="auth-btn" class="bg-white text-black font-black py-3 rounded-xl uppercase text-xs">Sign In / Sign Up</button>
+            </div>
+        </div>
+    </div>
 
     <div id="leaderboard-modal" class="central-modal">
         <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-pink-600">Hall of Shame</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
@@ -96,12 +116,12 @@
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col overflow-y-auto">
         <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold tracking-widest">Close ✕</button>
         
-        <div class="mb-8">
+        <div class="mb-8 cursor-pointer" onclick="openModal('profile-modal')">
             <div class="flex items-center gap-3 mb-6">
-                <div class="w-10 h-10 bg-pink-900/20 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600">P</div>
+                <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" class="w-10 h-10 border border-pink-600 rounded-full">
                 <div class="text-left">
-                    <p id="username-display" class="font-bold text-white text-sm italic">Annoying Pest</p>
-                    <p class="text-[9px] text-white-500 uppercase font-black tracking-widest">Level <span id="lvl-num">1</span></p>
+                    <p id="username-display" class="font-bold text-white text-sm italic">Guest Loser</p>
+                    <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest">Level <span id="lvl-num">1</span></p>
                 </div>
             </div>
             <div class="xp-bar-bg"><div id="xp-progress"></div></div>
@@ -141,7 +161,9 @@
             <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Failures</p></div>
             <div class="text-right"><p id="aura-text" class="text-xl font-black leading-none text-pink-600">20</p><div class="w-20 h-1 bg-gray-900 rounded-full mt-1 overflow-hidden"><div id="aura-progress" style="width: 100%"></div></div></div>
         </div>
-        <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">Reject Me</button>
+        <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">
+            Get Roasted
+        </button>
     </footer>
 
     <script>
@@ -157,26 +179,43 @@
             { id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
             { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 },
-            { id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 250 }, // Requires Level 25
+            { id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 250 },
             { id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 250 },
             { id: 6, name: "Dark Spanish", lang: "es-ES", emoji: "💀", minLevel: 250 }
         ];
 
         let holdTimer;
 
+        // --- Auth & Profile Management ---
+        async function updateProfile() {
+            const newName = document.getElementById('username-input').value;
+            if (!newName) return;
+            const { error } = await sb.from('profiles').update({ username: newName }).eq('id', currentUser.id);
+            if (!error) {
+                document.getElementById('username-display').innerText = newName;
+                alert("Profile Updated!");
+            }
+        }
+
+        async function handleAuth() {
+            const email = prompt("Enter email for sign up/login:");
+            if (!email) return;
+            const { error } = await sb.auth.signInWithOtp({ email });
+            if (!error) alert("Magic link sent to your email!");
+            else alert(error.message);
+        }
+
+        // --- UI Updates ---
         function updateStatsUI() {
             document.getElementById('counter').innerText = localCount;
             document.getElementById('aura-text').innerText = aura;
             document.getElementById('aura-progress').style.width = `${(aura / 20) * 100}%`;
             
             const newLevel = Math.floor(localCount / 10) + 1;
-            
-            // Level Up Trigger
             if (newLevel > currentLevel) {
                 currentLevel = newLevel;
                 showLevelUp();
             }
-
             document.getElementById('lvl-num').innerText = currentLevel;
             document.getElementById('xp-progress').style.width = `${((localCount % 10) / 10) * 100}%`;
             renderPacks();
@@ -186,15 +225,14 @@
             const toast = document.getElementById('level-toast');
             toast.innerText = `LEVEL ${currentLevel} REACHED! 🚀`;
             toast.classList.add('show');
-            confetti({ particleCount: 150, spread: 100, origin: { y: 0.2 }, colors: ['#db2777', '#ffffff'] });
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.2 } });
             setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
         function renderPacks() {
             const unlockedContainer = document.getElementById('unlocked-packs');
             const lockedContainer = document.getElementById('locked-packs');
-            unlockedContainer.innerHTML = ''; 
-            lockedContainer.innerHTML = '';
+            unlockedContainer.innerHTML = ''; lockedContainer.innerHTML = '';
 
             packs.forEach(p => {
                 const isOwned = unlockedPackIds.includes(p.id);
@@ -207,10 +245,7 @@
                 card.innerHTML = `
                     <div class="flex justify-between items-center">
                         <span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
-                        ${!isOwned ? `
-                            <span class="text-[8px] font-bold text-pink-600">
-                                ${canUnlock ? 'HOLD TO UNLOCK' : 'LVL ' + reqLevel}
-                            </span>` : ''}
+                        ${!isOwned ? `<span class="text-[8px] font-bold text-pink-600">${canUnlock ? 'HOLD TO UNLOCK' : 'LVL ' + reqLevel}</span>` : ''}
                     </div>
                     ${!isOwned && canUnlock ? `<svg class="unlock-progress-ring" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12"/></svg>` : ''}
                 `;
@@ -218,13 +253,13 @@
                 if (isOwned) {
                     card.onclick = () => { activePackId = p.id; currentLang = p.lang; renderPacks(); };
                     unlockedContainer.appendChild(card);
+                } else if (canUnlock) {
+                    card.onmousedown = () => startUnlock(p.id, card);
+                    card.onmouseup = card.onmouseleave = cancelUnlock;
+                    card.ontouchstart = (e) => { e.preventDefault(); startUnlock(p.id, card); };
+                    card.ontouchend = cancelUnlock;
+                    lockedContainer.appendChild(card);
                 } else {
-                    if (canUnlock) {
-                        card.onmousedown = () => startUnlock(p.id, card);
-                        card.onmouseup = card.onmouseleave = cancelUnlock;
-                        card.ontouchstart = (e) => { e.preventDefault(); startUnlock(p.id, card); };
-                        card.ontouchend = cancelUnlock;
-                    }
                     lockedContainer.appendChild(card);
                 }
             });
@@ -268,20 +303,19 @@
             setTimeout(() => btn.classList.remove('cooldown-active'), 2000);
         });
 
+        // Modals & Standard Actions
         window.openModal = (id) => { closeAllModals(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.add('hidden'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
 
         document.getElementById('shareBtn').addEventListener('click', async () => {
             const roastText = document.getElementById('message').innerText;
-            try {
-                if (navigator.share) {
-                    await navigator.share({ title: 'KutApp.io', text: `I just got roasted: "${roastText}"`, url: window.location.href });
-                } else {
-                    await navigator.clipboard.writeText(`I just got roasted: "${roastText}" - ${window.location.href}`);
-                    alert("Link copied!");
-                }
-            } catch (err) { console.log(err); }
+            if (navigator.share) {
+                await navigator.share({ title: 'KutApp.io', text: `I just got roasted: "${roastText}"`, url: window.location.href });
+            } else {
+                navigator.clipboard.writeText(`I just got roasted: "${roastText}" - ${window.location.href}`);
+                alert("Copied!");
+            }
         });
 
         document.getElementById('copyBtn').addEventListener('click', () => {
@@ -301,8 +335,24 @@
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-            if (profile) localCount = profile.lifetime_clicks;
-            else await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
+            
+            if (profile) {
+                localCount = profile.lifetime_clicks;
+                document.getElementById('username-display').innerText = profile.username || "Guest Loser";
+                if (profile.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = profile.avatar_url;
+                    document.getElementById('profile-img-modal').src = profile.avatar_url;
+                }
+            } else {
+                await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
+            }
+            
+            if (session) {
+                document.getElementById('auth-status').innerText = "Verified User";
+                document.getElementById('auth-btn').innerText = "Sign Out";
+                document.getElementById('auth-btn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+            }
+
             currentLevel = Math.floor(localCount / 10) + 1;
             updateStatsUI();
         }
