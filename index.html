@@ -170,7 +170,7 @@
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
         <div class="flex justify-between items-end px-2">
-            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Failures</p></div>
+            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Impacts</p></div>
             <div class="text-right"><p id="aura-text" class="text-xl font-black leading-none text-pink-600">20</p><div class="w-20 h-1 bg-gray-900 rounded-full mt-1 overflow-hidden"><div id="aura-progress" style="width: 100%"></div></div></div>
         </div>
         <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">Get Roasted</button>
@@ -199,7 +199,7 @@
         // --- Leaderboard Logic ---
         async function fetchLeaderboard(search = "") {
             const list = document.getElementById('leaderboard-list');
-            let query = sb.from('profiles').select('username, lifetime_clicks, avatar_url').order('lifetime_clicks', { ascending: false }).limit(20);
+            let query = sb.from('profiles').select('username, impacts, avatar_url').order('impacts', { ascending: false }).limit(20);
             
             if (search) query = query.ilike('username', `%${search}%`);
             
@@ -324,20 +324,33 @@
         }
 
         document.getElementById('actionBtn').addEventListener('click', async () => {
-            if (aura <= 0) return alert("Zero Aura remaining.");
+            if (aura <= 0) return alert("Zero Aura remaining. Visit the shop or watch an ad!");
+            
             const btn = document.getElementById('actionBtn');
             btn.classList.add('cooldown-active');
-            aura--; localStorage.setItem('userAura', aura);
             
+            // 1. Fetch Phrase first
             const { data: pool } = await sb.from('phrases').select('*').eq('pack_id', activePackId);
+            
             if (pool?.length) {
+                // 2. Local Update
+                aura--;
+                localCount++;
+                
                 const item = pool[Math.floor(Math.random() * pool.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = item.translation;
                 document.getElementById('action-row').style.opacity = "1";
-                localCount++; updateStatsUI();
-                await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
+                
+                // 3. Persistent Database Update
+                await sb.from('profiles').update({ 
+                    impacts: localCount,
+                    aura_balance: aura 
+                }).eq('id', currentUser.id);
+
+                updateStatsUI();
             }
+            
             setTimeout(() => btn.classList.remove('cooldown-active'), 2000);
         });
 
@@ -369,14 +382,29 @@
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
-            const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             
+            // Fetch profile from Supabase with new columns
+            const { data: profile } = await sb.from('profiles')
+                .select('impacts, aura_balance, username, avatar_url')
+                .eq('id', currentUser.id)
+                .single();
+
             if (profile) {
-                localCount = profile.lifetime_clicks;
+                // Use Database values instead of LocalStorage
+                localCount = profile.impacts || 0;
+                aura = profile.aura_balance !== null ? profile.aura_balance : 20;
                 document.getElementById('username-display').innerText = profile.username || "Guest Loser";
-                document.getElementById('sidebar-avatar').src = profile.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + profile.username;
+                document.getElementById('sidebar-avatar').src = profile.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (profile.username || 'Lucky');
             } else {
-                await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
+                // Initialize new user in DB
+                await sb.from('profiles').insert([{ 
+                    id: currentUser.id, 
+                    impacts: 0, 
+                    aura_balance: 20,
+                    username: 'Guest Loser' 
+                }]);
+                localCount = 0;
+                aura = 20;
             }
             
             if (session) {
@@ -388,7 +416,6 @@
             currentLevel = Math.floor(localCount / 10) + 1;
             updateStatsUI();
         }
-        init();
     </script>
 </body>
 </html>
