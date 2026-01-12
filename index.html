@@ -49,7 +49,7 @@
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
             <p id="subtext" class="text-gray-500 text-sm mb-8 h-6"></p>
             <div id="action-row" class="opacity-0 flex gap-3 justify-center">
-                <button onclick="generateShareCard()" id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
+                <button onclick="generateShareCard()" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
                 <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
             </div>
         </div>
@@ -65,7 +65,7 @@
                 </div>
             </div>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl">Get Roasted</button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-colors">Get Roasted</button>
     </footer>
 
     <div id="profile-modal" class="central-modal">
@@ -136,6 +136,7 @@
             document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active' : ''}`;
             document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active' : ''}`;
             document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
+            updateStatsUI();
         }
 
         function setActivePack(id, lang) {
@@ -144,22 +145,18 @@
             updateStatsUI();
         }
 
-        // NEW: SHARE CARD GENERATION FUNCTION
         function generateShareCard() {
             const canvas = document.getElementById('shareCanvas');
             const ctx = canvas.getContext('2d');
             const text = document.getElementById('message').innerText.toUpperCase();
             
-            // Draw background
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, 1080, 1080);
             
-            // Draw text
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.font = '900 65px Inter';
             
-            // Simple text wrapping
             const words = text.split(' ');
             let line = '', y = 450;
             words.forEach(word => {
@@ -172,12 +169,10 @@
             });
             ctx.fillText(line, 540, y);
             
-            // Draw Logo
             ctx.fillStyle = '#db2777';
             ctx.font = 'italic 900 50px Inter';
             ctx.fillText('KUTAPP', 540, 1000);
 
-            // Export image
             const link = document.createElement('a');
             link.download = 'KutApp-RealityCheck.png';
             link.href = canvas.toDataURL('image/png');
@@ -201,30 +196,38 @@
             if (currentMode === 'roast') {
                 if (aura < 1) return openModal('shop-modal');
                 aura -= 1; totalRoasts++;
+                
+                const { data } = await sb.from('phrases').select('*').eq('pack_id', activePackId);
+                displayResult(data);
             } else {
                 if (aura >= auraLimit) return alert("Aura Full!");
                 aura = Math.min(auraLimit, aura + 0.25); totalToasts++;
                 confetti({ particleCount: 15, colors: ['#fbbf24'] });
-            }
 
-            const table = currentMode === 'roast' ? 'phrases' : 'affirmations';
-            const { data } = await sb.from(table).select('*').eq('pack_id', activePackId);
-            
+                // Toasts specifically pull from Affirmations Pack ID 10
+                const { data } = await sb.from('affirmations').select('*').eq('pack_id', 10);
+                displayResult(data);
+            }
+            updateStatsUI();
+            saveToDB();
+        }
+
+        function displayResult(data) {
             if (data?.length) {
                 const item = data[Math.floor(Math.random() * data.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = item.translation || '';
                 document.getElementById('action-row').style.opacity = "1";
             }
-            updateStatsUI();
-            saveToDB();
         }
 
         function updateStatsUI() {
             document.getElementById('counter').innerText = totalRoasts + totalToasts;
             document.getElementById('aura-text').innerText = `${aura.toFixed(1)}/${auraLimit}`;
-            document.getElementById('aura-progress').style.width = `${(aura/auraLimit)*100}%`;
-            document.getElementById('aura-progress').style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
+            
+            const prog = document.getElementById('aura-progress');
+            prog.style.width = `${(aura/auraLimit)*100}%`;
+            prog.style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
             
             document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
             document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
