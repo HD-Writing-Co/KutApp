@@ -21,12 +21,21 @@
         }
         .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
 
+        /* Notification Toast */
+        #level-toast {
+            position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
+            background: #db2777; color: white; padding: 12px 24px; border-radius: 50px;
+            font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 10px 30px rgba(219, 39, 119, 0.4); z-index: 200;
+            transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #level-toast.show { top: 50px; }
+
         .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; }
         .pack-card.locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; border: 1px dashed #333; }
         .pack-card.available-to-unlock { opacity: 1; filter: none; border: 1px solid #db2777; background: #0f0f0f; }
 
-        /* Hold to Unlock Animation */
         .unlock-progress-ring {
             position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
             width: 24px; height: 24px; pointer-events: none; display: none;
@@ -56,6 +65,8 @@
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
+
+    <div id="level-toast">Level Up! 🚀</div>
 
     <div class="ticker-wrap">
         <div class="flex items-center px-4 border-r border-gray-800 bg-[#0a0a0a] z-10 h-full gap-2">
@@ -138,7 +149,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1;
+        let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1, currentLevel = 1;
         let aura = parseInt(localStorage.getItem('userAura')) || 20;
         let unlockedPackIds = JSON.parse(localStorage.getItem('unlockedPacks')) || [1, 2, 5]; 
 
@@ -146,9 +157,9 @@
             { id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
             { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 },
-            { id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 25 },
-            { id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 25 },
-            { id: 6, name: "Dark Spanish", lang: "es-ES", emoji: "💀", minLevel: 25 }
+            { id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 250 }, // Requires Level 25
+            { id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 250 },
+            { id: 6, name: "Dark Spanish", lang: "es-ES", emoji: "💀", minLevel: 250 }
         ];
 
         let holdTimer;
@@ -157,10 +168,26 @@
             document.getElementById('counter').innerText = localCount;
             document.getElementById('aura-text').innerText = aura;
             document.getElementById('aura-progress').style.width = `${(aura / 20) * 100}%`;
-            const level = Math.floor(localCount / 10) + 1;
-            document.getElementById('lvl-num').innerText = level;
+            
+            const newLevel = Math.floor(localCount / 10) + 1;
+            
+            // Level Up Trigger
+            if (newLevel > currentLevel) {
+                currentLevel = newLevel;
+                showLevelUp();
+            }
+
+            document.getElementById('lvl-num').innerText = currentLevel;
             document.getElementById('xp-progress').style.width = `${((localCount % 10) / 10) * 100}%`;
             renderPacks();
+        }
+
+        function showLevelUp() {
+            const toast = document.getElementById('level-toast');
+            toast.innerText = `LEVEL ${currentLevel} REACHED! 🚀`;
+            toast.classList.add('show');
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.2 }, colors: ['#db2777', '#ffffff'] });
+            setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
         function renderPacks() {
@@ -169,12 +196,10 @@
             unlockedContainer.innerHTML = ''; 
             lockedContainer.innerHTML = '';
 
-            const currentLevel = Math.floor(localCount / 10) + 1;
-
             packs.forEach(p => {
                 const isOwned = unlockedPackIds.includes(p.id);
-                const requiredLevel = (p.minLevel / 10) + 1;
-                const canUnlock = currentLevel >= requiredLevel;
+                const reqLevel = (p.minLevel / 10) + 1;
+                const canUnlock = currentLevel >= reqLevel;
                 
                 const card = document.createElement('div');
                 card.className = `pack-card ${!isOwned && !canUnlock ? 'locked' : ''} ${!isOwned && canUnlock ? 'available-to-unlock' : ''} ${activePackId === p.id && isOwned ? 'active' : ''}`;
@@ -184,18 +209,14 @@
                         <span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
                         ${!isOwned ? `
                             <span class="text-[8px] font-bold text-pink-600">
-                                ${canUnlock ? 'HOLD TO UNLOCK' : 'LVL ' + requiredLevel}
+                                ${canUnlock ? 'HOLD TO UNLOCK' : 'LVL ' + reqLevel}
                             </span>` : ''}
                     </div>
                     ${!isOwned && canUnlock ? `<svg class="unlock-progress-ring" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12"/></svg>` : ''}
                 `;
 
                 if (isOwned) {
-                    card.onclick = () => { 
-                        activePackId = p.id; 
-                        currentLang = p.lang; 
-                        renderPacks(); 
-                    };
+                    card.onclick = () => { activePackId = p.id; currentLang = p.lang; renderPacks(); };
                     unlockedContainer.appendChild(card);
                 } else {
                     if (canUnlock) {
@@ -213,7 +234,6 @@
             el.classList.add('holding');
             const ring = el.querySelector('.unlock-progress-ring');
             if (ring) ring.style.display = 'block';
-            
             holdTimer = setTimeout(() => {
                 unlockedPackIds.push(id);
                 localStorage.setItem('unlockedPacks', JSON.stringify(unlockedPackIds));
@@ -254,21 +274,14 @@
 
         document.getElementById('shareBtn').addEventListener('click', async () => {
             const roastText = document.getElementById('message').innerText;
-            const shareData = {
-                title: 'KutApp.io',
-                text: `I just got roasted: "${roastText}"`,
-                url: window.location.href
-            };
             try {
                 if (navigator.share) {
-                    await navigator.share(shareData);
+                    await navigator.share({ title: 'KutApp.io', text: `I just got roasted: "${roastText}"`, url: window.location.href });
                 } else {
-                    await navigator.clipboard.writeText(`${shareData.text} - ${shareData.url}`);
-                    const originalText = document.getElementById('shareBtn').innerText;
-                    document.getElementById('shareBtn').innerText = 'COPIED! ✅';
-                    setTimeout(() => document.getElementById('shareBtn').innerText = originalText, 2000);
+                    await navigator.clipboard.writeText(`I just got roasted: "${roastText}" - ${window.location.href}`);
+                    alert("Link copied!");
                 }
-            } catch (err) { console.log('Error sharing:', err); }
+            } catch (err) { console.log(err); }
         });
 
         document.getElementById('copyBtn').addEventListener('click', () => {
@@ -290,6 +303,7 @@
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (profile) localCount = profile.lifetime_clicks;
             else await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
+            currentLevel = Math.floor(localCount / 10) + 1;
             updateStatsUI();
         }
         init();
