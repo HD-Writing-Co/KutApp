@@ -21,6 +21,8 @@
         .vibe-toggle { display: flex; background: #111; padding: 4px; border-radius: 50px; border: 1px solid #222; margin-bottom: 20px; }
         .vibe-btn { padding: 8px 20px; border-radius: 50px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: all 0.2s; cursor: pointer; }
         .vibe-btn.active { background: #db2777; color: white; }
+        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; }
+        .pack-card.active { border-color: #db2777; background: #1a0a10; transform: scale(1.02); }
         .achievement-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
         .achievement-fill { height: 100%; transition: width 0.5s ease; }
     </style>
@@ -45,7 +47,7 @@
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
             <p id="subtext" class="text-gray-500 text-sm mb-8 h-6"></p>
             <div id="action-row" class="opacity-0 flex gap-3 justify-center">
-                <button id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share</button>
+                <button id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
                 <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
             </div>
         </div>
@@ -68,7 +70,7 @@
         <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
         <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800 mb-6">
             <div class="relative group">
-                <img id="profile-img-modal" src="" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover">
+                <img id="profile-img-modal" src="" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover bg-black">
                 <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
                     <span class="text-[10px] font-black uppercase text-white">Upload</span>
                     <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
@@ -121,7 +123,11 @@
 
         let currentUser = null, aura = 20, auraLimit = 20, totalRoasts = 0, totalToasts = 0, currentMode = 'roast', currentLang = 'en-US', activePackId = 2;
 
-        const packs = [{ id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" }, { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱" }, { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸" }];
+        const packs = [
+            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" },
+            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱" },
+            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸" }
+        ];
 
         function setMode(mode) {
             currentMode = mode;
@@ -130,18 +136,22 @@
             document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
         }
 
+        function setActivePack(id, lang) {
+            activePackId = id;
+            currentLang = lang;
+            updateStatsUI(); // Re-render packs to show selection
+        }
+
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0]) return;
             const file = input.files[0];
-            const fileName = `${currentUser.id}-${Date.now()}.png`;
-            
+            const fileName = `avatars/${currentUser.id}-${Date.now()}.png`;
             const { data, error } = await sb.storage.from('avatars').upload(fileName, file);
             if (!error) {
                 const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(fileName);
                 await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
                 document.getElementById('profile-img-modal').src = publicUrl;
                 document.getElementById('sidebar-avatar').src = publicUrl;
-                alert("Avatar Updated!");
             }
         }
 
@@ -174,14 +184,18 @@
             document.getElementById('aura-progress').style.width = `${(aura/auraLimit)*100}%`;
             document.getElementById('aura-progress').style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
             
-            // Achievements Restore
             document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
             document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
             document.getElementById('zen-prog').innerText = `${totalToasts}/500`;
             document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
 
-            document.getElementById('pack-list').innerHTML = packs.map(p => `
-                <div onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();" class="pack-card ${activePackId === p.id ? 'active' : ''}">
+            renderPacks();
+        }
+
+        function renderPacks() {
+            const list = document.getElementById('pack-list');
+            list.innerHTML = packs.map(p => `
+                <div onclick="setActivePack(${p.id}, '${p.lang}')" class="pack-card ${activePackId === p.id ? 'active' : ''}">
                     <span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
                 </div>
             `).join('');
@@ -196,7 +210,7 @@
             const name = document.getElementById('username-input').value;
             await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
             document.getElementById('username-display').innerText = name;
-            alert("Name Saved!");
+            alert("Saved!");
         }
 
         document.getElementById('speakBtn').onclick = () => {
@@ -232,11 +246,10 @@
             await sb.from('profiles').update({ aura_balance: aura, total_roasts: totalRoasts, total_toasts: totalToasts }).eq('id', currentUser.id);
         }
 
-        setInterval(() => { if(aura < auraLimit){ aura = Math.min(auraLimit, aura + 1); updateStatsUI(); saveToDB(); }}, 300000);
-
         window.openModal = (id) => { document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('overlay').classList.add('hidden'); document.getElementById('sidebar').classList.remove('open'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
+        
         document.getElementById('actionBtn').onclick = triggerAction;
         init();
     </script>
