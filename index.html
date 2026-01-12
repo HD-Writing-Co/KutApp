@@ -29,6 +29,8 @@
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
 
+    <canvas id="shareCanvas" width="1080" height="1080" style="display:none;"></canvas>
+
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase italic">KUTAPP</div>
         <div class="flex items-center gap-3">
@@ -47,7 +49,7 @@
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
             <p id="subtext" class="text-gray-500 text-sm mb-8 h-6"></p>
             <div id="action-row" class="opacity-0 flex gap-3 justify-center">
-                <button id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
+                <button onclick="generateShareCard()" id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
                 <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
             </div>
         </div>
@@ -139,7 +141,47 @@
         function setActivePack(id, lang) {
             activePackId = id;
             currentLang = lang;
-            updateStatsUI(); // Re-render packs to show selection
+            updateStatsUI();
+        }
+
+        // NEW: SHARE CARD GENERATION FUNCTION
+        function generateShareCard() {
+            const canvas = document.getElementById('shareCanvas');
+            const ctx = canvas.getContext('2d');
+            const text = document.getElementById('message').innerText.toUpperCase();
+            
+            // Draw background
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, 1080, 1080);
+            
+            // Draw text
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.font = '900 65px Inter';
+            
+            // Simple text wrapping
+            const words = text.split(' ');
+            let line = '', y = 450;
+            words.forEach(word => {
+                let testLine = line + word + ' ';
+                if (testLine.length > 18) {
+                    ctx.fillText(line, 540, y);
+                    line = word + ' ';
+                    y += 90;
+                } else { line = testLine; }
+            });
+            ctx.fillText(line, 540, y);
+            
+            // Draw Logo
+            ctx.fillStyle = '#db2777';
+            ctx.font = 'italic 900 50px Inter';
+            ctx.fillText('KUTAPP', 540, 1000);
+
+            // Export image
+            const link = document.createElement('a');
+            link.download = 'KutApp-RealityCheck.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         }
 
         async function uploadAvatar(input) {
