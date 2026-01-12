@@ -13,25 +13,22 @@
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
         .central-modal { 
-            position: fixed; top: 15%; left: 50%; transform: translateX(-50%) scale(0.9);
+            position: fixed; top: 10%; left: 50%; transform: translateX(-50%) scale(0.9);
             width: 90%; max-width: 400px; background: #0a0a0a; border: 1px solid #222;
-            border-radius: 24px; z-index: 60; display: none; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); opacity: 0; transition: all 0.3s ease;
+            border-radius: 24px; z-index: 60; display: none; padding: 24px; max-height: 80vh; overflow-y: auto; opacity: 0; transition: all 0.3s ease;
         }
         .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
         .vibe-toggle { display: flex; background: #111; padding: 4px; border-radius: 50px; border: 1px solid #222; margin-bottom: 20px; }
         .vibe-btn { padding: 8px 20px; border-radius: 50px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: all 0.2s; cursor: pointer; }
         .vibe-btn.active { background: #db2777; color: white; }
-        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 8px; }
-        .pack-card.active { border-color: #db2777; background: #1a0a10; }
-        #aura-progress { height: 100%; transition: width 0.3s ease, background-color 0.3s ease; }
+        .achievement-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
+        .achievement-fill { height: 100%; transition: width 0.5s ease; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
 
-    <canvas id="shareCanvas" width="1080" height="1080" style="display:none;"></canvas>
-
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
-        <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP</div>
+        <div class="font-black text-2xl tracking-tighter uppercase italic">KUTAPP</div>
         <div class="flex items-center gap-3">
             <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
             <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
@@ -44,11 +41,11 @@
             <button id="roastMode" onclick="setMode('roast')" class="vibe-btn active">🔥 Roast</button>
             <button id="toastMode" onclick="setMode('toast')" class="vibe-btn">✨ Toast</button>
         </div>
-        <div id="message-container" class="max-w-2xl">
+        <div id="message-container">
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
             <p id="subtext" class="text-gray-500 text-sm mb-8 h-6"></p>
-            <div id="action-row" class="flex items-center justify-center gap-3 opacity-0 transition-opacity">
-                <button id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Visual Share</button>
+            <div id="action-row" class="opacity-0 flex gap-3 justify-center">
+                <button id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share</button>
                 <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
             </div>
         </div>
@@ -56,30 +53,45 @@
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
         <div class="flex justify-between items-end px-2">
-            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Impacts</p></div>
+            <div><p id="counter" class="text-3xl font-black">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Impacts</p></div>
             <div class="text-right">
                 <p id="aura-text" class="text-xl font-black text-pink-600">20/20</p>
                 <div class="w-24 h-1.5 bg-gray-900 rounded-full mt-1 overflow-hidden">
-                    <div id="aura-progress" class="bg-pink-600" style="width: 100%"></div>
+                    <div id="aura-progress" class="bg-pink-600 h-full" style="width: 100%"></div>
                 </div>
             </div>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all shadow-2xl">Get Roasted</button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl">Get Roasted</button>
     </footer>
 
     <div id="profile-modal" class="central-modal">
         <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800">
-            <img id="profile-img-modal" src="" class="w-24 h-24 rounded-full border-2 border-pink-600 mb-2">
-            <button onclick="shuffleAvatar()" class="text-[10px] font-black uppercase text-pink-600">Shuffle Avatar</button>
+        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800 mb-6">
+            <div class="relative group">
+                <img id="profile-img-modal" src="" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover">
+                <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                    <span class="text-[10px] font-black uppercase text-white">Upload</span>
+                    <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
+                </label>
+            </div>
             <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
-            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save Profile</button>
+            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save</button>
+        </div>
+
+        <h3 class="text-[10px] font-black uppercase text-gray-500 mb-3">Achievements</h3>
+        <div class="achievement-card">
+            <div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Thick Skin</span><span id="skin-prog">0/1000</span></div>
+            <div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden"><div id="skin-fill" class="achievement-fill bg-pink-600" style="width: 0%"></div></div>
+        </div>
+        <div class="achievement-card">
+            <div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Zen Master</span><span id="zen-prog">0/500</span></div>
+            <div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden"><div id="zen-fill" class="achievement-fill bg-yellow-500" style="width: 0%"></div></div>
         </div>
     </div>
 
     <div id="leaderboard-modal" class="central-modal">
         <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div id="leaderboard-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto"></div>
+        <div id="leaderboard-list" class="flex flex-col gap-2"></div>
     </div>
 
     <div id="shop-modal" class="central-modal">
@@ -92,11 +104,9 @@
 
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
-        <div class="mb-8 cursor-pointer" onclick="openModal('profile-modal')">
-            <div class="flex items-center gap-3">
-                <img id="sidebar-avatar" src="" class="w-10 h-10 border border-pink-600 rounded-full">
-                <div class="text-left"><p id="username-display" class="font-bold text-sm text-white">Guest</p></div>
-            </div>
+        <div class="flex items-center gap-3 mb-8 cursor-pointer" onclick="openModal('profile-modal')">
+            <img id="sidebar-avatar" src="" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
+            <div class="text-left"><p id="username-display" class="font-bold text-sm text-white">Guest</p></div>
         </div>
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4">Packs</h3>
         <div id="pack-list" class="flex flex-col gap-2"></div>
@@ -109,19 +119,30 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, aura = 20, auraLimit = 20, totalRoasts = 0, totalToasts = 0, currentMode = 'roast', currentLang = 'en-US', activePackId = 2, currentAvatar = 'Lucky';
+        let currentUser = null, aura = 20, auraLimit = 20, totalRoasts = 0, totalToasts = 0, currentMode = 'roast', currentLang = 'en-US', activePackId = 2;
 
-        const packs = [
-            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" },
-            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱" },
-            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸" }
-        ];
+        const packs = [{ id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" }, { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱" }, { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸" }];
 
         function setMode(mode) {
             currentMode = mode;
             document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active' : ''}`;
             document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active' : ''}`;
             document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
+        }
+
+        async function uploadAvatar(input) {
+            if (!input.files || !input.files[0]) return;
+            const file = input.files[0];
+            const fileName = `${currentUser.id}-${Date.now()}.png`;
+            
+            const { data, error } = await sb.storage.from('avatars').upload(fileName, file);
+            if (!error) {
+                const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(fileName);
+                await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+                document.getElementById('profile-img-modal').src = publicUrl;
+                document.getElementById('sidebar-avatar').src = publicUrl;
+                alert("Avatar Updated!");
+            }
         }
 
         async function triggerAction() {
@@ -131,6 +152,7 @@
             } else {
                 if (aura >= auraLimit) return alert("Aura Full!");
                 aura = Math.min(auraLimit, aura + 0.25); totalToasts++;
+                confetti({ particleCount: 15, colors: ['#fbbf24'] });
             }
 
             const table = currentMode === 'roast' ? 'phrases' : 'affirmations';
@@ -151,10 +173,13 @@
             document.getElementById('aura-text').innerText = `${aura.toFixed(1)}/${auraLimit}`;
             document.getElementById('aura-progress').style.width = `${(aura/auraLimit)*100}%`;
             document.getElementById('aura-progress').style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-            renderPacks();
-        }
+            
+            // Achievements Restore
+            document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
+            document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
+            document.getElementById('zen-prog').innerText = `${totalToasts}/500`;
+            document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
 
-        function renderPacks() {
             document.getElementById('pack-list').innerHTML = packs.map(p => `
                 <div onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();" class="pack-card ${activePackId === p.id ? 'active' : ''}">
                     <span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
@@ -162,43 +187,25 @@
             `).join('');
         }
 
-        function shuffleAvatar() {
-            currentAvatar = Math.random().toString(36).substring(7);
-            const url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentAvatar}`;
-            document.getElementById('profile-img-modal').src = url;
-            document.getElementById('sidebar-avatar').src = url;
+        async function fetchLeaderboard() {
+            const { data } = await sb.from('profiles').select('username, total_roasts').order('total_roasts', { ascending: false }).limit(10);
+            document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `<div class="flex justify-between bg-[#111] p-3 rounded-xl border border-gray-800 text-xs font-bold"><span>${i+1}. ${u.username || 'Anon'}</span><span class="text-pink-600">${u.total_roasts}</span></div>`).join('');
         }
 
         async function updateProfile() {
             const name = document.getElementById('username-input').value;
-            await sb.from('profiles').update({ username: name, avatar_url: currentAvatar }).eq('id', currentUser.id);
+            await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
             document.getElementById('username-display').innerText = name;
-            alert("Profile Updated!");
+            alert("Name Saved!");
         }
 
-        async function fetchLeaderboard() {
-            const { data } = await sb.from('profiles').select('username, total_roasts').order('total_roasts', { ascending: false }).limit(10);
-            document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
-                <div class="flex items-center justify-between bg-[#111] p-3 rounded-xl border border-gray-800">
-                    <p class="text-xs font-bold text-white">${i+1}. ${u.username || 'Anon'}</p>
-                    <p class="text-[9px] font-black text-pink-600 uppercase">${u.total_roasts} Roasts</p>
-                </div>
-            `).join('');
-        }
-
-        // --- Improved Natural Voice Picker ---
         document.getElementById('speakBtn').onclick = () => {
             window.speechSynthesis.cancel();
             const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
             u.lang = currentLang;
-            
             const voices = window.speechSynthesis.getVoices();
-            // Search for high quality natural voices
-            const premium = voices.find(v => v.lang.startsWith(currentLang) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium')));
+            const premium = voices.find(v => v.lang.startsWith(currentLang) && (v.name.includes('Google') || v.name.includes('Premium')));
             if (premium) u.voice = premium;
-
-            u.rate = 0.95; // Slightly slower feels more human
-            u.pitch = 1.0;
             window.speechSynthesis.speak(u);
         };
 
@@ -206,17 +213,17 @@
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+            
             if (profile) {
                 aura = profile.aura_balance || 20;
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
-                currentAvatar = profile.avatar_url || 'Lucky';
                 document.getElementById('username-display').innerText = profile.username || "Guest";
                 document.getElementById('username-input').value = profile.username || "";
+                const avatar = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`;
+                document.getElementById('profile-img-modal').src = avatar;
+                document.getElementById('sidebar-avatar').src = avatar;
             }
-            const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentAvatar}`;
-            document.getElementById('profile-img-modal').src = avatarUrl;
-            document.getElementById('sidebar-avatar').src = avatarUrl;
             updateStatsUI();
         }
 
@@ -225,14 +232,12 @@
             await sb.from('profiles').update({ aura_balance: aura, total_roasts: totalRoasts, total_toasts: totalToasts }).eq('id', currentUser.id);
         }
 
+        setInterval(() => { if(aura < auraLimit){ aura = Math.min(auraLimit, aura + 1); updateStatsUI(); saveToDB(); }}, 300000);
+
         window.openModal = (id) => { document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('overlay').classList.add('hidden'); document.getElementById('sidebar').classList.remove('open'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
-        
         document.getElementById('actionBtn').onclick = triggerAction;
-        document.getElementById('shareBtn').onclick = () => { /* Card logic from before */ };
-        
-        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices(); // Cache voices
         init();
     </script>
 </body>
