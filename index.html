@@ -3,126 +3,138 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KutApp.io | Get Lost</title>
+    <title>KutApp.io | Hall of Shame</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; transition: background-color 0.3s ease; }
+        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; }
         
+        /* Modals & Sidebar */
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
         
-        .pack-card { background: #111; border: 1px solid #333; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; }
-        .pack-card.locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        .central-modal { 
+            position: fixed; top: 15%; left: 50%; transform: translateX(-50%) scale(0.9);
+            width: 90%; max-width: 400px; background: #0a0a0a; border: 1px solid #222;
+            border-radius: 24px; z-index: 60; display: none; padding: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); opacity: 0; transition: all 0.3s ease;
+        }
+        .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
+
+        /* Styling */
+        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; }
+        .pack-card.locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; border: 1px dashed #333; }
 
         .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
         .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 25s linear infinite; color: #ffffff; font-weight: 900; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        .xp-bar-bg { width: 100%; height: 4px; background: #1a1a1a; border-radius: 2px; margin-top: 8px; overflow: hidden; }
-        #xp-progress { width: 0%; height: 100%; background: #db2777; transition: width 0.5s ease; }
         #aura-progress { height: 100%; background: linear-gradient(90deg, #db2777, #701a75); transition: width 0.3s ease; }
+        #xp-progress { width: 0%; height: 100%; background: #db2777; transition: width 0.5s ease; }
 
-        /* Cooldown Animation */
+        /* Button Cooldown */
         #actionBtn.cooldown-active { pointer-events: none; color: transparent; }
         #actionBtn.cooldown-active::after {
             content: "RECOVERING AURA...";
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #444;
-            font-size: 10px;
-            letter-spacing: 2px;
+            position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            color: #444; font-size: 10px; letter-spacing: 2px;
             background: linear-gradient(to right, #222 50%, transparent 50%);
-            background-size: 200% 100%;
-            animation: cooldownFill 2s linear forwards;
+            background-size: 200% 100%; animation: cooldownFill 2s linear forwards;
         }
-        @keyframes cooldownFill {
-            from { background-position: 0% 0; }
-            to { background-position: -100% 0; }
-        }
-
-        /* Message Logic */
-        #message { transition: font-size 0.2s ease; line-height: 1.1; }
-        
-        @keyframes insultPop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .animate-pop { animation: insultPop 0.3s ease-out forwards; }
+        @keyframes cooldownFill { from { background-position: 0% 0; } to { background-position: -100% 0; } }
     </style>
 </head>
-<body id="body-tag" class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
+<body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
 
     <div class="ticker-wrap">
         <div class="flex items-center px-4 border-r border-gray-800 bg-[#0a0a0a] z-10 h-full gap-2">
             <span class="h-1.5 w-1.5 bg-pink-600 rounded-full animate-pulse"></span>
             <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">LIVE</span>
         </div>
-        <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest">
-            Welcome to KutApp.io • Log your failures • Unlock new ways to be insulted • 
+        <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest font-black">
+            Hall of Shame is Live • Top Losers updated hourly • Don't run out of Aura •
         </div>
     </div>
 
-    <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-[45]"></div>
+    <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45]"></div>
+
+    <div id="leaderboard-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-black uppercase italic tracking-tighter text-pink-600">Hall of Shame</h2>
+            <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
+        </div>
+        <div id="leaderboard-list" class="flex flex-col gap-3">
+            <p class="text-gray-600 text-[10px] uppercase text-center animate-pulse">Loading Losers...</p>
+        </div>
+    </div>
+
+    <div id="shop-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-black uppercase italic tracking-tighter text-yellow-500">Black Market</h2>
+            <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
+        </div>
+        <div class="flex flex-col gap-3">
+            <button class="bg-[#111] border border-yellow-900/50 p-4 rounded-xl flex justify-between items-center group active:scale-95 transition-all">
+                <div class="text-left">
+                    <p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p>
+                    <p class="text-[9px] text-gray-500 uppercase">Instant +20 Aura Reserve</p>
+                </div>
+                <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$0.99</span>
+            </button>
+            <div class="p-4 rounded-xl border border-gray-900 opacity-40 text-center">
+                <p class="text-[9px] uppercase font-bold text-gray-600">Premium Packs coming soon</p>
+            </div>
+        </div>
+    </div>
 
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col overflow-y-auto">
         <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
         
-        <div id="logged-in-view">
+        <div class="mb-8">
             <div class="flex items-center gap-3 mb-6">
-                <div class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600 text-xl">
-                    <span id="avatar-letter">?</span>
-                </div>
+                <div class="w-10 h-10 bg-pink-900/20 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600">P</div>
                 <div class="text-left">
-                    <p id="username-display" class="font-bold text-white text-lg italic">Annoying Pest</p>
-                    <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">Level <span id="lvl-num">1</span></p>
+                    <p id="username-display" class="font-bold text-white text-sm">Annoying Pest</p>
+                    <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest">Level <span id="lvl-num">1</span></p>
                 </div>
             </div>
-            <div class="bg-[#0f0f0f] p-4 rounded-xl border border-gray-900 mb-6">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-[9px] uppercase font-bold text-gray-500 tracking-tighter">Rank Progress</span>
-                    <span class="text-[9px] font-bold text-pink-600" id="xp-text">0/100</span>
-                </div>
-                <div class="xp-bar-bg"><div id="xp-progress"></div></div>
-            </div>
+            <div class="xp-bar-bg"><div id="xp-progress"></div></div>
         </div>
 
-        <h3 class="text-xs font-bold uppercase text-gray-500 mb-4 tracking-widest">Phrase Packs</h3>
-        <div id="pack-list" class="flex flex-col gap-2"></div>
+        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Available Packs</h3>
+        <div id="unlocked-packs" class="flex flex-col gap-2 mb-8"></div>
+
+        <h3 class="text-[10px] font-black uppercase text-gray-700 mb-4 tracking-widest">Locked Packs</h3>
+        <div id="locked-packs" class="flex flex-col gap-2"></div>
     </aside>
 
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
-        <div class="flex items-center gap-4">
-            <div class="text-right hidden sm:block">
-                <p class="text-[8px] font-black uppercase text-gray-500 tracking-widest">Aura Reserve</p>
-                <div class="w-24 h-1.5 bg-gray-900 rounded-full mt-1 overflow-hidden">
-                    <div id="aura-progress" style="width: 100%"></div>
-                </div>
-            </div>
-            <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600 transition-all">
+        <div class="flex items-center gap-3">
+            <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 hover:border-pink-600">
+                🏆
+            </button>
+            <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 hover:border-yellow-600">
+                🛒
+            </button>
+            <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
         </div>
     </header>
 
-    <main class="w-full flex-grow flex flex-col justify-center items-center px-4 text-center">
-        <div id="message-container" class="max-w-2xl w-full flex flex-col items-center">
-            <h1 id="message" class="text-5xl md:text-7xl font-black mb-4 uppercase italic">Select Pack.</h1>
-            <p id="subtext" class="text-gray-500 text-sm md:text-base mb-8 max-w-md leading-relaxed opacity-0 transition-opacity duration-500">
-                (Press the button to begin)
-            </p>
+    <main class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
+        <div id="message-container" class="max-w-2xl">
+            <h1 id="message" class="text-5xl md:text-7xl font-black mb-4 uppercase italic">KUTAPP</h1>
+            <p id="subtext" class="text-gray-500 text-sm md:text-base mb-8 h-6 tracking-wide"></p>
             
-            <div class="flex flex-col items-center gap-4">
-                <button id="copyBtn" class="hidden text-gray-600 hover:text-pink-600 transition-colors uppercase text-[10px] font-black tracking-widest bg-gray-900/40 px-4 py-2 rounded-full border border-gray-800">
-                    Copy 📋
-                </button>
-                <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-                </button>
+            <div id="action-row" class="flex items-center justify-center gap-3 opacity-0 transition-opacity">
+                <button id="copyBtn" class="text-gray-500 hover:text-white uppercase text-[9px] font-black tracking-widest bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800">Copy 📋</button>
+                <button id="shareBtn" class="text-gray-500 hover:text-white uppercase text-[9px] font-black tracking-widest bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800">Share 🔗</button>
+                <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800 text-gray-400">🔊</button>
             </div>
         </div>
     </main>
@@ -131,11 +143,13 @@
         <div class="flex justify-between items-end px-2">
             <div>
                 <p id="counter" class="text-3xl font-black leading-none">0</p>
-                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Total Failures</p>
+                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Total Sufferings</p>
             </div>
             <div class="text-right">
                 <p id="aura-text" class="text-xl font-black leading-none text-pink-600">20</p>
-                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Aura</p>
+                <div class="w-20 h-1 bg-gray-900 rounded-full mt-1 overflow-hidden">
+                    <div id="aura-progress" style="width: 100%"></div>
+                </div>
             </div>
         </div>
         <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">
@@ -149,9 +163,7 @@
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1;
-        let phraseHistory = [];
         let aura = parseInt(localStorage.getItem('userAura')) || 20;
-        const MAX_AURA = 20;
 
         const packs = [
 			{ id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
@@ -169,102 +181,115 @@
             { threshold: 150, title: "Legendary Outcast", max: 1000 }
         ];
 
-        // Text Fitting Logic
+        // --- Core UI Logic ---
         function fitText(text) {
             const el = document.getElementById('message');
             el.classList.remove('text-7xl', 'text-5xl', 'text-4xl', 'text-2xl');
-            
             if (text.length > 80) el.classList.add('text-2xl');
             else if (text.length > 50) el.classList.add('text-4xl');
             else if (text.length > 30) el.classList.add('text-5xl');
             else el.classList.add('text-7xl');
         }
 
-        document.getElementById('actionBtn').addEventListener('click', async () => {
-            if (aura <= 0) return alert("Wait for your Aura to recover.");
+        async function fetchLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            const { data } = await sb.from('profiles').select('*').order('lifetime_clicks', { ascending: false }).limit(5);
+            if (data) {
+                list.innerHTML = data.map((u, i) => `
+                    <div class="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-gray-900">
+                        <div class="flex items-center gap-3">
+                            <span class="text-pink-600 font-black italic">#${i+1}</span>
+                            <div class="text-left">
+                                <p class="text-[10px] font-bold uppercase text-white">${u.username || 'Anonymous Loser'}</p>
+                                <p class="text-[8px] text-gray-500 uppercase">${u.lifetime_clicks} ROASTS</p>
+                            </div>
+                        </div>
+                        <span class="text-[18px]">${i === 0 ? '👑' : '💀'}</span>
+                    </div>
+                `).join('');
+            }
+        }
 
+        document.getElementById('actionBtn').addEventListener('click', async () => {
+            if (aura <= 0) return alert("Zero Aura remaining.");
             const btn = document.getElementById('actionBtn');
             btn.classList.add('cooldown-active');
 
-            aura--;
-            localStorage.setItem('userAura', aura);
-            
+            aura--; localStorage.setItem('userAura', aura);
             const { data: pool } = await sb.from('phrases').select('*').eq('pack_id', activePackId);
 
             if (pool?.length) {
-                let available = pool.filter(p => !phraseHistory.includes(p.id));
-                if (available.length === 0) { phraseHistory = []; available = pool; }
-
-                const item = available[Math.floor(Math.random() * available.length)];
-                phraseHistory.push(item.id);
-                if (phraseHistory.length > 15) phraseHistory.shift();
-
-                const msgEl = document.getElementById('message');
-                msgEl.innerText = item.content;
-                fitText(item.content); // Apply sizing
-
+                const item = pool[Math.floor(Math.random() * pool.length)];
+                document.getElementById('message').innerText = item.content;
+                fitText(item.content);
                 document.getElementById('subtext').innerText = item.translation;
-                document.getElementById('subtext').style.opacity = "1";
-                document.getElementById('speakBtn').classList.remove('hidden');
-                document.getElementById('copyBtn').classList.remove('hidden');
-                
-                localCount++; 
-                updateStatsUI();
-                
-                if (ranks.some(r => localCount === r.threshold)) {
-                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                }
+                document.getElementById('action-row').style.opacity = "1";
+                localCount++; updateStatsUI();
                 await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
             }
-
             setTimeout(() => btn.classList.remove('cooldown-active'), 2000);
         });
 
         const updateStatsUI = () => {
             document.getElementById('counter').innerText = localCount;
             document.getElementById('aura-text').innerText = aura;
-            document.getElementById('aura-progress').style.width = `${(aura / MAX_AURA) * 100}%`;
-
-            const currentRank = [...ranks].reverse().find(r => localCount >= r.threshold);
-            document.getElementById('lvl-num').innerText = Math.floor(localCount / 10) + 1;
-            document.getElementById('username-display').innerText = currentRank.title;
+            document.getElementById('aura-progress').style.width = `${(aura / 20) * 100}%`;
             
-            const progress = ((localCount - currentRank.threshold) / (currentRank.max - currentRank.threshold)) * 100;
-            document.getElementById('xp-progress').style.width = `${Math.min(progress, 100)}%`;
-            document.getElementById('xp-text').innerText = `${localCount}/${currentRank.max}`;
-            renderPacks();
+            const currentRank = [...ranks].reverse().find(r => localCount >= r.threshold);
+            const level = Math.floor(localCount / 10) + 1;
+            document.getElementById('lvl-num').innerText = level;
+            document.getElementById('username-display').innerText = currentRank.title;
+            document.getElementById('xp-progress').style.width = `${((localCount % 10) / 10) * 100}%`;
+            renderPacks(level);
         };
 
-        const renderPacks = () => {
-            const container = document.getElementById('pack-list');
-            container.innerHTML = packs.map(p => {
-                const isLocked = Math.floor(localCount / 10) + 1 < (p.minLevel / 10) + 1; // Simplified level check
-                const isActive = activePackId === p.id;
-                return `
-                    <div class="pack-card ${isLocked ? 'locked' : ''} ${isActive ? 'active' : ''}" 
+        const renderPacks = (level) => {
+            const unlocked = document.getElementById('unlocked-packs');
+            const locked = document.getElementById('locked-packs');
+            unlocked.innerHTML = ''; locked.innerHTML = '';
+
+            packs.forEach(p => {
+                const isLocked = level < (p.minLevel / 10) + 1;
+                const card = `
+                    <div class="pack-card ${isLocked ? 'locked' : (activePackId === p.id ? 'active' : '')}" 
                          onclick="${isLocked ? '' : `setLang('${p.lang}', ${p.id})`}">
                         <div class="flex justify-between items-center">
                             <span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
-                            ${isLocked ? `<span class="text-[8px] text-pink-600 font-bold">LVL ${p.minLevel}</span>` : ''}
+                            ${isLocked ? `<span class="text-[8px] font-bold text-pink-600">LVL ${p.minLevel/10 + 1}</span>` : ''}
                         </div>
                     </div>`;
-            }).join('');
+                if (isLocked) locked.innerHTML += card;
+                else unlocked.innerHTML += card;
+            });
         };
 
-        window.setLang = (lang, id) => { 
-            currentLang = lang; activePackId = id; phraseHistory = []; renderPacks(); 
+        // --- Modals ---
+        window.openModal = (id) => {
+            closeAllModals();
+            document.getElementById(id).classList.add('active');
+            document.getElementById('overlay').classList.remove('hidden');
+        };
+        window.closeAllModals = () => {
+            document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active'));
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('overlay').classList.add('hidden');
+        };
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.add('open');
+            document.getElementById('overlay').classList.remove('hidden');
         };
 
-        window.toggleSidebar = () => { 
-            document.getElementById('sidebar').classList.toggle('open'); 
-            document.getElementById('overlay').classList.toggle('hidden'); 
-        };
-        
+        window.setLang = (lang, id) => { currentLang = lang; activePackId = id; renderPacks(Math.floor(localCount / 10) + 1); };
+
         document.getElementById('copyBtn').addEventListener('click', () => {
             navigator.clipboard.writeText(document.getElementById('message').innerText);
-            const btn = document.getElementById('copyBtn');
-            btn.innerText = 'COPIED! ✅';
-            setTimeout(() => btn.innerText = 'COPY 📋', 1500);
+            document.getElementById('copyBtn').innerText = 'OK! ✅';
+            setTimeout(() => document.getElementById('copyBtn').innerText = 'Copy 📋', 1500);
+        });
+
+        document.getElementById('shareBtn').addEventListener('click', () => {
+            const text = `"${document.getElementById('message').innerText}" - Get Roasted on KutApp.io`;
+            navigator.share ? navigator.share({ text }) : alert("Copy this: " + text);
         });
 
         document.getElementById('speakBtn').addEventListener('click', () => {
@@ -274,18 +299,9 @@
 			window.speechSynthesis.speak(utterance);
 		});
 
-        setInterval(() => {
-            if (aura < MAX_AURA) { aura++; updateStatsUI(); }
-        }, 300000);
-
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
-            if (!session) {
-                const { data } = await sb.auth.signInAnonymously();
-                currentUser = data.user;
-            } else {
-                currentUser = session.user;
-            }
+            currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (profile) localCount = profile.lifetime_clicks;
             else await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
