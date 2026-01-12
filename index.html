@@ -13,11 +13,11 @@
         
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
-        input { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
+        input, textarea { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
+        textarea { height: 60px; resize: none; }
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 800px; }
         
-        /* Global Sabotage Effect */
         @keyframes globalShake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(-1deg); }
@@ -32,9 +32,6 @@
         .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 25s linear infinite; color: #ffffff; font-weight: 900; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        #avatar-circle { cursor: pointer; position: relative; overflow: hidden; width: 48px; height: 48px; border-radius: 9999px; }
-        #avatar-img { width: 100%; height: 100%; object-fit: cover; }
-        
         .xp-bar-bg { width: 100%; height: 4px; background: #1a1a1a; border-radius: 2px; margin-top: 8px; overflow: hidden; }
         #xp-progress { width: 0%; height: 100%; background: #db2777; transition: width 0.5s ease; }
 
@@ -50,10 +47,10 @@
     <div class="ticker-wrap">
         <div class="flex items-center px-4 border-r border-gray-800 bg-[#0a0a0a] z-10 h-full gap-2">
             <span class="h-1.5 w-1.5 bg-pink-600 rounded-full animate-pulse"></span>
-            <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">Global Events</span>
+            <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">Global</span>
         </div>
         <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest">
-            Welcome to KutApp.io • No one cares about your progress • 
+            Welcome to KutApp.io • Level up your failure today • 
         </div>
     </div>
 
@@ -79,7 +76,7 @@
         <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
         
         <div class="mb-4">
-            <button onclick="toggleAccordion('acc-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-black uppercase text-pink-600 tracking-widest">
+            <button onclick="toggleAccordion('acc-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-black uppercase tracking-widest text-pink-600">
                 <span>Dashboard</span> <span>↓</span>
             </button>
             <div id="acc-content" class="accordion-content open pt-4">
@@ -93,13 +90,12 @@
                 </div>
                 <div id="logged-in-view" class="hidden">
                     <div class="flex items-center gap-3 mb-6">
-                        <div id="avatar-circle" onclick="document.getElementById('avatar-upload').click()" class="bg-pink-900/30 border border-pink-600 flex items-center justify-center font-black text-pink-600 text-xl">
-                            <img id="avatar-img" class="hidden"> <span id="avatar-letter">?</span>
+                        <div class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600 text-xl" id="avatar-circle">
+                            <span id="avatar-letter">?</span>
                         </div>
-                        <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(event)">
                         <div class="text-left">
-                            <input type="text" id="username-input" onchange="updateUsername()" class="mb-0 bg-transparent border-none p-0 font-bold text-white text-lg outline-none">
-                            <p class="text-[10px] text-gray-400 uppercase font-black">Streak: 1 🔥</p>
+                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Username" class="mb-0 bg-transparent border-none p-0 font-bold text-white text-lg outline-none">
+                            <p class="text-[10px] text-gray-400 uppercase font-black">Online 🔥</p>
                         </div>
                     </div>
                     <div class="bg-[#0f0f0f] p-4 rounded-xl border border-gray-900 mb-6">
@@ -109,13 +105,23 @@
                         </div>
                         <div class="xp-bar-bg"><div id="xp-progress"></div></div>
                     </div>
-                    <button onclick="handleLogout()" class="w-full bg-red-900/10 text-red-500 py-2 rounded text-[10px] font-black uppercase">Logout</button>
                 </div>
             </div>
         </div>
 
         <div class="mb-4">
-            <button onclick="fetchLeaderboard(); toggleAccordion('lead-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase text-white tracking-widest">
+            <button onclick="toggleAccordion('suggest-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest text-white">
+                <span>Submit a Roast</span> <span>↓</span>
+            </button>
+            <div id="suggest-content" class="accordion-content pt-4">
+                <textarea id="suggest-input" placeholder="Type a Dutch or English insult..."></textarea>
+                <input type="text" id="suggest-trans" placeholder="Translation (optional)">
+                <button onclick="submitRoast()" id="submit-roast-btn" class="w-full bg-pink-600 text-white font-black py-3 rounded-lg text-[10px] uppercase">Send for Approval</button>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <button onclick="fetchLeaderboard(); toggleAccordion('lead-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest text-white">
                 <span>Top Losers</span> <span>↓</span>
             </button>
             <div id="lead-content" class="accordion-content pt-4">
@@ -126,16 +132,15 @@
 
     <header class="w-full flex justify-between items-center max-w-4xl">
         <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
-        <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600 relative">
+        <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-            <span id="nav-dot" class="absolute top-2 right-2 w-2 h-2 bg-pink-600 rounded-full hidden"></span>
         </button>
     </header>
 
     <main class="text-center flex flex-grow flex-col justify-center items-center">
         <div id="message-container">
             <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
-            <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Open the sidebar to select a pack)</p>
+            <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Select a pack in the sidebar)</p>
         </div>
         <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all mb-4">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -183,26 +188,40 @@
             document.getElementById('xp-text').innerText = `${count}/${current.max}`;
         };
 
-        document.getElementById('speakBtn').addEventListener('click', () => {
-            const msg = document.getElementById('message').innerText;
-            if (!msg || msg === "Welcome.") return;
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(msg);
-            const voices = window.speechSynthesis.getVoices();
-            const dutchVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
-            if (dutchVoice) utterance.voice = dutchVoice;
-            utterance.lang = currentLang; utterance.rate = 0.9;
-            window.speechSynthesis.speak(utterance);
-        });
-
+        // UI HELPERS
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
         window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
-        window.setPack = (id, lang) => { activePack = id; currentLang = lang; toggleSidebar(); };
         window.toggleShareModal = () => {
             const m = document.getElementById('share-modal'); m.classList.toggle('active');
             document.getElementById('share-count').innerText = localCount;
         };
 
+        // SUBMISSION LOGIC
+        window.submitRoast = async () => {
+            const content = document.getElementById('suggest-input').value;
+            const translation = document.getElementById('suggest-trans').value;
+            const btn = document.getElementById('submit-roast-btn');
+            
+            if (!content) return alert("Type something first, loser.");
+            
+            btn.innerText = "Sending...";
+            const { error } = await sb.from('suggestions').insert([{ 
+                content, 
+                translation, 
+                author_name: document.getElementById('username-input')?.value || 'Anonymous' 
+            }]);
+
+            if (error) {
+                alert("Failed. Even our database rejects you.");
+            } else {
+                alert("Roast submitted. If it's funny, we'll add it.");
+                document.getElementById('suggest-input').value = '';
+                document.getElementById('suggest-trans').value = '';
+            }
+            btn.innerText = "Send for Approval";
+        };
+
+        // AUTH & PROFILE
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) {
@@ -220,13 +239,10 @@
             const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (data) {
                 localCount = data.lifetime_clicks; 
-                updateStatsUI();
-                updateLevelUI(localCount);
-                if (data.username) document.getElementById('username-input').value = data.username;
-                if (data.avatar_url) {
-                    const img = document.getElementById('avatar-img');
-                    img.src = data.avatar_url; img.classList.remove('hidden');
-                    document.getElementById('avatar-letter').classList.add('hidden');
+                updateStatsUI(); updateLevelUI(localCount);
+                if (data.username) {
+                    document.getElementById('username-input').value = data.username;
+                    document.getElementById('avatar-letter').innerText = data.username[0].toUpperCase();
                 }
             }
         }
@@ -268,7 +284,7 @@
         };
 
         window.fetchLeaderboard = async () => {
-            const { data } = await sb.from('profiles').select('username, lifetime_clicks, avatar_url').order('lifetime_clicks', { ascending: false }).limit(5);
+            const { data } = await sb.from('profiles').select('username, lifetime_clicks').order('lifetime_clicks', { ascending: false }).limit(5);
             document.getElementById('leaderboard-list').innerHTML = (data || []).map((u, i) => `
                 <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
                     <div class="flex items-center gap-2">
@@ -290,7 +306,6 @@
         function showLoggedIn(user) {
             document.getElementById('logged-out-view').classList.add('hidden');
             document.getElementById('logged-in-view').classList.remove('hidden');
-            document.getElementById('nav-dot').classList.remove('hidden');
         }
 
         init();
