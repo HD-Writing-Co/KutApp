@@ -14,7 +14,6 @@
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
         
-        /* Pack Card Styling */
         .pack-card { background: #111; border: 1px solid #333; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; }
         .pack-card.locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; }
@@ -23,7 +22,6 @@
         .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 25s linear infinite; color: #ffffff; font-weight: 900; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* Aura & XP Progress */
         .xp-bar-bg { width: 100%; height: 4px; background: #1a1a1a; border-radius: 2px; margin-top: 8px; overflow: hidden; }
         #xp-progress { width: 0%; height: 100%; background: #db2777; transition: width 0.5s ease; }
         #aura-progress { height: 100%; background: linear-gradient(90deg, #db2777, #701a75); transition: width 0.3s ease; }
@@ -49,10 +47,11 @@
             to { background-position: -100% 0; }
         }
 
-        @keyframes insultPop { 0% { transform: scale(0.9); opacity: 0; filter: blur(5px); } 100% { transform: scale(1); opacity: 1; filter: blur(0); } }
-        .animate-pop { animation: insultPop 0.2s ease-out forwards; }
-        #share-modal { display: none; }
-        #share-modal.active { display: flex; }
+        /* Message Logic */
+        #message { transition: font-size 0.2s ease; line-height: 1.1; }
+        
+        @keyframes insultPop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .animate-pop { animation: insultPop 0.3s ease-out forwards; }
     </style>
 </head>
 <body id="body-tag" class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
@@ -72,60 +71,63 @@
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col overflow-y-auto">
         <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
         
-        <div class="mb-4">
-            <div id="logged-in-view">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600 text-xl" id="avatar-circle">
-                        <span id="avatar-letter">?</span>
-                    </div>
-                    <div class="text-left">
-                        <p id="username-display" class="font-bold text-white text-lg">Annoying Pest</p>
-                        <p class="text-[10px] text-gray-400 uppercase font-black">Level <span id="lvl-num">1</span></p>
-                    </div>
+        <div id="logged-in-view">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600 text-xl">
+                    <span id="avatar-letter">?</span>
                 </div>
-                <div class="bg-[#0f0f0f] p-4 rounded-xl border border-gray-900 mb-6">
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[9px] uppercase font-bold text-gray-500">Next Rank Progress</span>
-                        <span class="text-[9px] font-bold text-pink-600" id="xp-text">0/100</span>
-                    </div>
-                    <div class="xp-bar-bg"><div id="xp-progress"></div></div>
+                <div class="text-left">
+                    <p id="username-display" class="font-bold text-white text-lg italic">Annoying Pest</p>
+                    <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest">Level <span id="lvl-num">1</span></p>
                 </div>
+            </div>
+            <div class="bg-[#0f0f0f] p-4 rounded-xl border border-gray-900 mb-6">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-[9px] uppercase font-bold text-gray-500 tracking-tighter">Rank Progress</span>
+                    <span class="text-[9px] font-bold text-pink-600" id="xp-text">0/100</span>
+                </div>
+                <div class="xp-bar-bg"><div id="xp-progress"></div></div>
             </div>
         </div>
 
-        <div class="mb-4">
-            <h3 class="text-xs font-bold uppercase text-gray-500 mb-4 tracking-widest">Phrase Packs</h3>
-            <div id="pack-list" class="flex flex-col gap-2"></div>
-        </div>
+        <h3 class="text-xs font-bold uppercase text-gray-500 mb-4 tracking-widest">Phrase Packs</h3>
+        <div id="pack-list" class="flex flex-col gap-2"></div>
     </aside>
 
-    <header class="w-full flex justify-between items-center max-w-4xl">
+    <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
         <div class="flex items-center gap-4">
             <div class="text-right hidden sm:block">
-                <p class="text-[8px] font-black uppercase text-gray-500">Aura Available</p>
+                <p class="text-[8px] font-black uppercase text-gray-500 tracking-widest">Aura Reserve</p>
                 <div class="w-24 h-1.5 bg-gray-900 rounded-full mt-1 overflow-hidden">
                     <div id="aura-progress" style="width: 100%"></div>
                 </div>
             </div>
-            <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600">
+            <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600 transition-all">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
             </button>
         </div>
     </header>
 
-    <main class="text-center flex flex-grow flex-col justify-center items-center relative">
-        <button id="copyBtn" class="absolute top-0 right-0 p-2 text-gray-600 hover:text-pink-600 transition-colors uppercase text-[10px] font-black hidden">Copy 📋</button>
-        <div id="message-container">
-            <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Select Pack.</h1>
-            <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Press the button to begin)</p>
+    <main class="w-full flex-grow flex flex-col justify-center items-center px-4 text-center">
+        <div id="message-container" class="max-w-2xl w-full flex flex-col items-center">
+            <h1 id="message" class="text-5xl md:text-7xl font-black mb-4 uppercase italic">Select Pack.</h1>
+            <p id="subtext" class="text-gray-500 text-sm md:text-base mb-8 max-w-md leading-relaxed opacity-0 transition-opacity duration-500">
+                (Press the button to begin)
+            </p>
+            
+            <div class="flex flex-col items-center gap-4">
+                <button id="copyBtn" class="hidden text-gray-600 hover:text-pink-600 transition-colors uppercase text-[10px] font-black tracking-widest bg-gray-900/40 px-4 py-2 rounded-full border border-gray-800">
+                    Copy 📋
+                </button>
+                <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </button>
+            </div>
         </div>
-        <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all mb-4">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
-        </button>
     </main>
 
-    <footer class="w-full max-w-sm flex flex-col gap-4 mb-8">
+    <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
         <div class="flex justify-between items-end px-2">
             <div>
                 <p id="counter" class="text-3xl font-black leading-none">0</p>
@@ -136,7 +138,9 @@
                 <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Aura</p>
             </div>
         </div>
-        <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden">Reject Me</button>
+        <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">
+            Reject Me
+        </button>
     </footer>
 
     <script>
@@ -146,8 +150,6 @@
 
         let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1;
         let phraseHistory = [];
-        
-        // Aura State
         let aura = parseInt(localStorage.getItem('userAura')) || 20;
         const MAX_AURA = 20;
 
@@ -167,25 +169,27 @@
             { threshold: 150, title: "Legendary Outcast", max: 1000 }
         ];
 
+        // Text Fitting Logic
+        function fitText(text) {
+            const el = document.getElementById('message');
+            el.classList.remove('text-7xl', 'text-5xl', 'text-4xl', 'text-2xl');
+            
+            if (text.length > 80) el.classList.add('text-2xl');
+            else if (text.length > 50) el.classList.add('text-4xl');
+            else if (text.length > 30) el.classList.add('text-5xl');
+            else el.classList.add('text-7xl');
+        }
+
         document.getElementById('actionBtn').addEventListener('click', async () => {
-            if (aura <= 0) {
-                alert("You've run out of Aura! Wait for it to recover.");
-                return;
-            }
+            if (aura <= 0) return alert("Wait for your Aura to recover.");
 
             const btn = document.getElementById('actionBtn');
             btn.classList.add('cooldown-active');
 
-            // 1. Spend Aura
             aura--;
             localStorage.setItem('userAura', aura);
             
-            // 2. Determine Pooled Packs
-            const unlockedPacks = packs
-                .filter(p => p.lang === currentLang && localCount >= p.minLevel)
-                .map(p => p.id);
-
-            const { data: pool } = await sb.from('phrases').select('*').in('pack_id', unlockedPacks);
+            const { data: pool } = await sb.from('phrases').select('*').eq('pack_id', activePackId);
 
             if (pool?.length) {
                 let available = pool.filter(p => !phraseHistory.includes(p.id));
@@ -195,8 +199,12 @@
                 phraseHistory.push(item.id);
                 if (phraseHistory.length > 15) phraseHistory.shift();
 
-                document.getElementById('message').innerText = item.content;
-                document.getElementById('subtext').innerText = `(${item.translation})`;
+                const msgEl = document.getElementById('message');
+                msgEl.innerText = item.content;
+                fitText(item.content); // Apply sizing
+
+                document.getElementById('subtext').innerText = item.translation;
+                document.getElementById('subtext').style.opacity = "1";
                 document.getElementById('speakBtn').classList.remove('hidden');
                 document.getElementById('copyBtn').classList.remove('hidden');
                 
@@ -204,16 +212,12 @@
                 updateStatsUI();
                 
                 if (ranks.some(r => localCount === r.threshold)) {
-                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#db2777', '#ffffff'] });
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 }
-
                 await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
             }
 
-            // Cooldown Timer (2 seconds)
-            setTimeout(() => {
-                btn.classList.remove('cooldown-active');
-            }, 2000);
+            setTimeout(() => btn.classList.remove('cooldown-active'), 2000);
         });
 
         const updateStatsUI = () => {
@@ -234,39 +238,35 @@
         const renderPacks = () => {
             const container = document.getElementById('pack-list');
             container.innerHTML = packs.map(p => {
-                const isLocked = localCount < p.minLevel;
-                const isActive = currentLang === p.lang && activePackId === p.id;
+                const isLocked = Math.floor(localCount / 10) + 1 < (p.minLevel / 10) + 1; // Simplified level check
+                const isActive = activePackId === p.id;
                 return `
                     <div class="pack-card ${isLocked ? 'locked' : ''} ${isActive ? 'active' : ''}" 
                          onclick="${isLocked ? '' : `setLang('${p.lang}', ${p.id})`}">
                         <div class="flex justify-between items-center">
-                            <span class="text-xs font-black uppercase">${p.emoji} ${p.name}</span>
-                            ${isLocked ? `<span class="text-[9px] text-pink-600">🔒 LVL ${p.minLevel}</span>` : ''}
+                            <span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
+                            ${isLocked ? `<span class="text-[8px] text-pink-600 font-bold">LVL ${p.minLevel}</span>` : ''}
                         </div>
                     </div>`;
             }).join('');
         };
 
         window.setLang = (lang, id) => { 
-            currentLang = lang; 
-            activePackId = id; 
-            phraseHistory = [];
-            renderPacks(); 
+            currentLang = lang; activePackId = id; phraseHistory = []; renderPacks(); 
         };
 
-        // UI Utils
-        window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
+        window.toggleSidebar = () => { 
+            document.getElementById('sidebar').classList.toggle('open'); 
+            document.getElementById('overlay').classList.toggle('hidden'); 
+        };
         
-        // Clipboard
         document.getElementById('copyBtn').addEventListener('click', () => {
-            const text = document.getElementById('message').innerText;
-            navigator.clipboard.writeText(text);
+            navigator.clipboard.writeText(document.getElementById('message').innerText);
             const btn = document.getElementById('copyBtn');
             btn.innerText = 'COPIED! ✅';
             setTimeout(() => btn.innerText = 'COPY 📋', 1500);
         });
 
-        // Speech
         document.getElementById('speakBtn').addEventListener('click', () => {
 			window.speechSynthesis.cancel();
 			const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
@@ -274,13 +274,8 @@
 			window.speechSynthesis.speak(utterance);
 		});
 
-        // Passive Aura Recovery (1 every 5 minutes)
         setInterval(() => {
-            if (aura < MAX_AURA) {
-                aura++;
-                localStorage.setItem('userAura', aura);
-                updateStatsUI();
-            }
+            if (aura < MAX_AURA) { aura++; updateStatsUI(); }
         }, 300000);
 
         async function init() {
@@ -291,17 +286,11 @@
             } else {
                 currentUser = session.user;
             }
-            
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-            if (profile) {
-                localCount = profile.lifetime_clicks;
-            } else {
-                await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
-            }
-            
+            if (profile) localCount = profile.lifetime_clicks;
+            else await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
             updateStatsUI();
         }
-
         init();
     </script>
 </body>
