@@ -160,11 +160,16 @@
         let phraseHistory = []; // Anti-repeat buffer
 
         const packs = [
-            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
-            { id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
-            { id: 3, name: "Direct Amsterdam", lang: "nl-NL", emoji: "🏙️", minLevel: 25 },
-            { id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 25 }
-        ];
+			// --- STARTER PACKS (Level 0) ---
+			{ id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
+			{ id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
+			{ id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 },
+
+			// --- MILESTONE PACKS (Level 25+) ---
+			{ id: 3, name: "Direct Amsterdam", lang: "nl-NL", emoji: "🏙️", minLevel: 25 },
+			{ id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 25 },
+			{ id: 6, name: "Existential Spanish", lang: "es-ES", emoji: "💀", minLevel: 25 }
+		];
 
         const ranks = [
             { threshold: 0, title: "Annoying Pest", max: 25 },
@@ -286,11 +291,25 @@
         }
 
         document.getElementById('speakBtn').addEventListener('click', () => {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            utterance.lang = currentLang;
-            window.speechSynthesis.speak(utterance);
-        });
+			// 1. Stop any current speaking to prevent overlap
+			window.speechSynthesis.cancel();
+
+			// 2. Grab the text currently on the screen
+			const textToSpeak = document.getElementById('message').innerText;
+    
+			// 3. Create the utterance
+			const utterance = new SpeechSynthesisUtterance(textToSpeak);
+
+			// 4. Set the language based on the active pack's lang property (e.g., "es-ES")
+			utterance.lang = currentPack.lang;
+
+			// 5. Optional: Adjust pitch/rate for more 'attitude'
+			utterance.pitch = 0.9; // Slightly deeper, more serious
+			utterance.rate = 1.0;  // Standard speed
+
+			// 6. Speak
+			window.speechSynthesis.speak(utterance);
+		});
 
         window.updateUsername = async () => {
             await sb.from('profiles').update({ username: document.getElementById('username-input').value }).eq('id', currentUser.id);
