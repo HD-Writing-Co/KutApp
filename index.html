@@ -129,6 +129,7 @@
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱" },
             { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸" }
+			{ id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨" }
         ];
 
         function setMode(mode) {
@@ -193,24 +194,42 @@
         }
 
         async function triggerAction() {
-            if (currentMode === 'roast') {
-                if (aura < 1) return openModal('shop-modal');
-                aura -= 1; totalRoasts++;
-                
-                const { data } = await sb.from('phrases').select('*').eq('pack_id', activePackId);
-                displayResult(data);
-            } else {
-                if (aura >= auraLimit) return alert("Aura Full!");
-                aura = Math.min(auraLimit, aura + 0.25); totalToasts++;
-                confetti({ particleCount: 15, colors: ['#fbbf24'] });
+			let targetPackId = activePackId; // Default to sidebar selection
 
-                // Toasts specifically pull from Affirmations Pack ID 10
-                const { data } = await sb.from('affirmations').select('*').eq('pack_id', 10);
-                displayResult(data);
-            }
-            updateStatsUI();
-            saveToDB();
-        }
+			if (currentMode === 'roast') {
+				if (aura < 1) return openModal('shop-modal');
+				aura -= 1; 
+				totalRoasts++;
+			} else {
+				// Toast Mode Logic
+				if (aura >= auraLimit) return alert("Aura Full!");
+				aura = Math.min(auraLimit, aura + 0.25); 
+				totalToasts++;
+				confetti({ particleCount: 15, colors: ['#fbbf24'] });
+        
+				// IMPORTANT: Always use Pack 10 for Affirmations regardless of sidebar
+				targetPackId = 10; 
+			}
+
+			const table = currentMode === 'roast' ? 'phrases' : 'affirmations';
+    
+			// Use targetPackId here
+			const { data, error } = await sb.from(table)
+				.select('*')
+				.eq('pack_id', targetPackId);
+    
+			if (data?.length) {
+				const item = data[Math.floor(Math.random() * data.length)];
+				document.getElementById('message').innerText = item.content;
+				document.getElementById('subtext').innerText = item.translation || '';
+				document.getElementById('action-row').style.opacity = "1";
+			} else {
+				console.error("No data found for pack:", targetPackId);
+			}
+
+			updateStatsUI();
+			saveToDB();
+		}
 
         function displayResult(data) {
             if (data?.length) {
