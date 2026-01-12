@@ -19,9 +19,9 @@
         }
         .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
         .vibe-toggle { display: flex; background: #111; padding: 4px; border-radius: 50px; border: 1px solid #222; margin-bottom: 20px; }
-        .vibe-btn { padding: 8px 20px; border-radius: 50px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: all 0.2s; cursor: pointer; }
-        .vibe-btn.active { background: #db2777; color: white; }
-        .vibe-btn.toast-active { background: #fbbf24; color: black; }
+        .vibe-btn { padding: 8px 20px; border-radius: 50px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: all 0.2s; cursor: pointer; color: #666; }
+        .vibe-btn.active-roast { background: #db2777; color: white; }
+        .vibe-btn.active-toast { background: #fbbf24; color: black; }
         .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; transform: scale(1.02); }
         .achievement-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
@@ -43,7 +43,7 @@
 
     <main class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
         <div class="vibe-toggle">
-            <button id="roastMode" onclick="setMode('roast')" class="vibe-btn active">🔥 Roast</button>
+            <button id="roastMode" onclick="setMode('roast')" class="vibe-btn active-roast">🔥 Roast</button>
             <button id="toastMode" onclick="setMode('toast')" class="vibe-btn">✨ Toast</button>
         </div>
         <div id="message-container">
@@ -69,46 +69,20 @@
         <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-colors">Get Roasted</button>
     </footer>
 
-    <div id="profile-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800 mb-6">
-            <div class="relative group">
-                <img id="profile-img-modal" src="" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover bg-black">
-                <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                    <span class="text-[10px] font-black uppercase text-white">Upload</span>
-                    <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
-                </label>
-            </div>
-            <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
-            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save</button>
-        </div>
-        <h3 class="text-[10px] font-black uppercase text-gray-500 mb-3">Achievements</h3>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Thick Skin</span><span id="skin-prog">0/1000</span></div><div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden"><div id="skin-fill" class="achievement-fill bg-pink-600" style="width: 0%"></div></div></div>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Zen Master</span><span id="zen-prog">0/500</span></div><div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden"><div id="zen-fill" class="achievement-fill bg-yellow-500" style="width: 0%"></div></div></div>
-    </div>
-
-    <div id="leaderboard-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div id="leaderboard-list" class="flex flex-col gap-2"></div>
-    </div>
-
-    <div id="shop-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <button class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center mb-3">
-            <p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p>
-            <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$0.99</span>
-        </button>
-    </div>
-
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
         <div class="flex items-center gap-3 mb-8 cursor-pointer" onclick="openModal('profile-modal')">
-            <img id="sidebar-avatar" src="" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
+            <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
             <div class="text-left"><p id="username-display" class="font-bold text-sm text-white">Guest</p></div>
         </div>
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4">Packs</h3>
         <div id="pack-list" class="flex flex-col gap-2"></div>
     </aside>
+
+    <div id="leaderboard-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div id="leaderboard-list" class="flex flex-col gap-2"></div>
+    </div>
 
     <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45]"></div>
 
@@ -119,7 +93,6 @@
 
         let currentUser = null, aura = 20, auraLimit = 20, totalRoasts = 0, totalToasts = 0, currentMode = 'roast', currentLang = 'en-US', activePackId = 2;
 
-        // UPDATED PACKS LIST
         const packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱" },
@@ -129,8 +102,8 @@
 
         function setMode(mode) {
             currentMode = mode;
-            document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active' : ''}`;
-            document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'toast-active' : ''}`;
+            document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
+            document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
             document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
             updateStatsUI();
         }
@@ -142,30 +115,31 @@
         }
 
         async function triggerAction() {
-            let targetPackId = activePackId;
-            const table = currentMode === 'roast' ? 'phrases' : 'affirmations';
+            // Logic check: Roasts pull from 'phrases', Toasts pull from 'affirmations'
+            const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
+            const targetId = (currentMode === 'toast') ? 10 : activePackId;
 
             if (currentMode === 'roast') {
-                if (aura < 1) return openModal('shop-modal');
-                aura -= 1; 
-                totalRoasts++;
+                if (aura < 1) return alert("Out of Aura!");
+                aura -= 1; totalRoasts++;
             } else {
                 if (aura >= auraLimit) return alert("Aura Full!");
-                aura = Math.min(auraLimit, aura + 0.25); 
-                totalToasts++;
-                confetti({ particleCount: 15, colors: ['#fbbf24'] });
-                // FORCED PACK ID FOR TOASTS
-                targetPackId = 10; 
+                aura = Math.min(auraLimit, aura + 0.25); totalToasts++;
+                confetti({ particleCount: 20, colors: ['#fbbf24', '#ffffff'] });
             }
 
-            const { data, error } = await sb.from(table).select('*').eq('pack_id', targetPackId);
-            
-            if (data?.length) {
+            const { data, error } = await sb.from(table).select('*').eq('pack_id', targetId);
+
+            if (data && data.length > 0) {
                 const item = data[Math.floor(Math.random() * data.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = item.translation || '';
                 document.getElementById('action-row').style.opacity = "1";
+            } else {
+                document.getElementById('message').innerText = "CONTENT MISSING";
+                console.error("Database query returned no rows for table:", table, "ID:", targetId);
             }
+
             updateStatsUI();
             saveToDB();
         }
@@ -176,9 +150,6 @@
             const prog = document.getElementById('aura-progress');
             prog.style.width = `${(aura/auraLimit)*100}%`;
             prog.style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-            
-            document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
-            document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
             renderPacks();
         }
 
@@ -191,13 +162,55 @@
             `).join('');
         }
 
-        // ... Rest of utility functions (speakBtn, profile, init, saveToDB) remained same ...
-        document.getElementById('speakBtn').onclick = () => {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            u.lang = currentLang;
-            window.speechSynthesis.speak(u);
-        };
+        async function fetchLeaderboard() {
+            // Fetches top users by combined score
+            const { data, error } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
+            if (data) {
+                document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
+                    <div class="flex justify-between bg-[#111] p-3 rounded-xl border border-gray-800 text-xs font-bold">
+                        <span>${i+1}. ${u.username || 'Anon'}</span>
+                        <span class="text-pink-600">${(u.total_roasts || 0) + (u.total_toasts || 0)}</span>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function generateShareCard() {
+            const canvas = document.getElementById('shareCanvas');
+            const ctx = canvas.getContext('2d');
+            const msg = document.getElementById('message').innerText;
+            
+            // Background
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, 1080, 1080);
+            
+            // Text Settings
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.font = '900 80px Inter';
+            
+            // Wrap Text
+            const words = msg.split(' ');
+            let line = '', y = 400;
+            words.forEach(word => {
+                if ((line + word).length > 15) {
+                    ctx.fillText(line.toUpperCase(), 540, y);
+                    line = word + ' ';
+                    y += 100;
+                } else { line += word + ' '; }
+            });
+            ctx.fillText(line.toUpperCase(), 540, y);
+            
+            // Watermark
+            ctx.fillStyle = currentMode === 'roast' ? '#db2777' : '#fbbf24';
+            ctx.font = 'italic 900 60px Inter';
+            ctx.fillText('KUTAPP', 540, 950);
+
+            const link = document.createElement('a');
+            link.download = 'KutApp-Share.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
 
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
@@ -208,17 +221,19 @@
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
                 document.getElementById('username-display').innerText = profile.username || "Guest";
-                document.getElementById('profile-img-modal').src = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`;
             }
             updateStatsUI();
         }
 
         async function saveToDB() {
             if (!currentUser) return;
-            await sb.from('profiles').update({ aura_balance: aura, total_roasts: totalRoasts, total_toasts: totalToasts }).eq('id', currentUser.id);
+            await sb.from('profiles').update({ 
+                aura_balance: aura, 
+                total_roasts: totalRoasts, 
+                total_toasts: totalToasts 
+            }).eq('id', currentUser.id);
         }
 
-        function generateShareCard() { /* (Previous implementation) */ }
         window.openModal = (id) => { document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('overlay').classList.add('hidden'); document.getElementById('sidebar').classList.remove('open'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
