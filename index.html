@@ -156,12 +156,12 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1, currentLevel = 1;
+        let currentUser = null, localCount = 0, currentLang = 'nl-US', activePackId = 2, currentLevel = 1;
         let aura = 20;
         let unlockedPackIds = [1, 2, 5];
 
         const packs = [
-            { id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
+            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇬🇧", minLevel: 0 },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
             { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 },
             { id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 250 },
