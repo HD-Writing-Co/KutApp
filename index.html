@@ -140,7 +140,7 @@
 
         let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1;
         let aura = parseInt(localStorage.getItem('userAura')) || 20;
-        let unlockedPackIds = JSON.parse(localStorage.getItem('unlockedPacks')) || [1, 2, 5]; // Defaults
+        let unlockedPackIds = JSON.parse(localStorage.getItem('unlockedPacks')) || [1, 2, 5]; 
 
         const packs = [
             { id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
@@ -160,58 +160,54 @@
             const level = Math.floor(localCount / 10) + 1;
             document.getElementById('lvl-num').innerText = level;
             document.getElementById('xp-progress').style.width = `${((localCount % 10) / 10) * 100}%`;
-            renderPacks(level);
+            renderPacks();
         }
 
-		function renderPacks() {
-			const unlocked = document.getElementById('unlocked-packs');
-			const locked = document.getElementById('locked-packs');
-			unlocked.innerHTML = ''; locked.innerHTML = '';
+        function renderPacks() {
+            const unlockedContainer = document.getElementById('unlocked-packs');
+            const lockedContainer = document.getElementById('locked-packs');
+            unlockedContainer.innerHTML = ''; 
+            lockedContainer.innerHTML = '';
 
-			// Calculate current level (1 level per 10 failures)
-			const currentLevel = Math.floor(localCount / 10) + 1;
+            const currentLevel = Math.floor(localCount / 10) + 1;
 
-			packs.forEach(p => {
-				const isOwned = unlockedPackIds.includes(p.id);
-				// Requirement check: p.minLevel is the failure count, so p.minLevel/10 + 1 is the level
-				const requiredLevel = (p.minLevel / 10) + 1;
-				const canUnlock = currentLevel >= requiredLevel;
-        
-				const card = document.createElement('div');
-				// If not owned and NOT high enough level, it stays "locked" (greyed out)
-				// If not owned but high enough level, it gets "available-to-unlock" (colored)
-				card.className = `pack-card ${!isOwned && !canUnlock ? 'locked' : ''} ${!isOwned && canUnlock ? 'available-to-unlock' : ''} ${activePackId === p.id && isOwned ? 'active' : ''}`;
-        
-				card.innerHTML = `
-					<div class="flex justify-between items-center">
-						<span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
-						${!isOwned ? `
-							<span class="text-[8px] font-bold text-pink-600">
-								${canUnlock ? 'HOLD TO UNLOCK' : 'LVL ' + requiredLevel}
-							</span>` : ''}
-					</div>
-					${!isOwned && canUnlock ? `<svg class="unlock-progress-ring" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12"/></svg>` : ''}
-				`;
+            packs.forEach(p => {
+                const isOwned = unlockedPackIds.includes(p.id);
+                const requiredLevel = (p.minLevel / 10) + 1;
+                const canUnlock = currentLevel >= requiredLevel;
+                
+                const card = document.createElement('div');
+                card.className = `pack-card ${!isOwned && !canUnlock ? 'locked' : ''} ${!isOwned && canUnlock ? 'available-to-unlock' : ''} ${activePackId === p.id && isOwned ? 'active' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
+                        ${!isOwned ? `
+                            <span class="text-[8px] font-bold text-pink-600">
+                                ${canUnlock ? 'HOLD TO UNLOCK' : 'LVL ' + requiredLevel}
+                            </span>` : ''}
+                    </div>
+                    ${!isOwned && canUnlock ? `<svg class="unlock-progress-ring" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12"/></svg>` : ''}
+                `;
 
-				if (isOwned) {
-					card.onclick = () => { 
-						activePackId = p.id; 
-						currentLang = p.lang; 
-						renderPacks(); 
-					};
-					unlocked.appendChild(card);
-				} else {
-					// IMPORTANT: Only attach hold listeners if the player meets the level requirement
-					if (canUnlock) {
-						card.onmousedown = () => startUnlock(p.id, card);
-						card.onmouseup = card.onmouseleave = cancelUnlock;
-						card.ontouchstart = (e) => { e.preventDefault(); startUnlock(p.id, card); };
-						card.ontouchend = cancelUnlock;
-					}
-					locked.appendChild(card);
-				}
-			});
-		}
+                if (isOwned) {
+                    card.onclick = () => { 
+                        activePackId = p.id; 
+                        currentLang = p.lang; 
+                        renderPacks(); 
+                    };
+                    unlockedContainer.appendChild(card);
+                } else {
+                    if (canUnlock) {
+                        card.onmousedown = () => startUnlock(p.id, card);
+                        card.onmouseup = card.onmouseleave = cancelUnlock;
+                        card.ontouchstart = (e) => { e.preventDefault(); startUnlock(p.id, card); };
+                        card.ontouchend = cancelUnlock;
+                    }
+                    lockedContainer.appendChild(card);
+                }
+            });
+        }
 
         function startUnlock(id, el) {
             el.classList.add('holding');
@@ -234,7 +230,6 @@
             if (ring) ring.style.display = 'none';
         }
 
-        // --- Standard Logic ---
         document.getElementById('actionBtn').addEventListener('click', async () => {
             if (aura <= 0) return alert("Zero Aura remaining.");
             const btn = document.getElementById('actionBtn');
@@ -257,6 +252,38 @@
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.add('hidden'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
 
+        document.getElementById('shareBtn').addEventListener('click', async () => {
+            const roastText = document.getElementById('message').innerText;
+            const shareData = {
+                title: 'KutApp.io',
+                text: `I just got roasted: "${roastText}"`,
+                url: window.location.href
+            };
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    await navigator.clipboard.writeText(`${shareData.text} - ${shareData.url}`);
+                    const originalText = document.getElementById('shareBtn').innerText;
+                    document.getElementById('shareBtn').innerText = 'COPIED! ✅';
+                    setTimeout(() => document.getElementById('shareBtn').innerText = originalText, 2000);
+                }
+            } catch (err) { console.log('Error sharing:', err); }
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            navigator.clipboard.writeText(document.getElementById('message').innerText);
+            document.getElementById('copyBtn').innerText = 'OK! ✅';
+            setTimeout(() => document.getElementById('copyBtn').innerText = 'Copy 📋', 1500);
+        });
+
+        document.getElementById('speakBtn').addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
+            utterance.lang = currentLang;
+            window.speechSynthesis.speak(utterance);
+        });
+
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
@@ -265,30 +292,6 @@
             else await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
             updateStatsUI();
         }
-		
-		document.getElementById('shareBtn').addEventListener('click', async () => {
-			const roastText = document.getElementById('message').innerText;
-			const shareData = {
-				title: 'KutApp.io',
-				text: `I just got roasted: "${roastText}"`,
-				url: window.location.href
-			};
-
-			try {
-				if (navigator.share) {
-					// Mobile Native Share
-					await navigator.share(shareData);
-				} else {
-					// Desktop Fallback: Copy to clipboard
-					await navigator.clipboard.writeText(`${shareData.text} - ${shareData.url}`);
-					const originalText = document.getElementById('shareBtn').innerText;
-					document.getElementById('shareBtn').innerText = 'COPIED! ✅';
-					setTimeout(() => document.getElementById('shareBtn').innerText = originalText, 2000);
-				}
-			} catch (err) {
-				console.log('Error sharing:', err);
-			}
-		});
         init();
     </script>
 </body>
