@@ -32,8 +32,7 @@
 
         .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; }
-        .pack-card.locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; border: 1px dashed #333; }
-
+        
         .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
         .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 25s linear infinite; color: #ffffff; font-weight: 900; }
         @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
@@ -54,6 +53,7 @@
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
 
     <div id="level-toast">Level Up! 🚀</div>
+    <canvas id="shareCanvas" width="1080" height="1080" style="display:none;"></canvas>
 
     <div class="ticker-wrap">
         <div class="flex items-center px-4 border-r border-gray-800 bg-[#0a0a0a] z-10 h-full gap-2">
@@ -61,7 +61,7 @@
             <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">LIVE</span>
         </div>
         <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest font-black">
-            Welcome to KutApp.io • Connect your account to save progress • Search rivals in the Hall of Shame •
+            KutApp.io • Share your reality checks to social media • Connect account to save Aura • New packs coming soon •
         </div>
     </div>
 
@@ -71,174 +71,164 @@
         <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Your Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
         <div class="flex flex-col gap-4">
             <div class="flex items-center gap-4 bg-gray-900 p-4 rounded-xl border border-gray-800">
-                <div class="relative group cursor-pointer" onclick="document.getElementById('avatar-upload').click()">
-                    <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" class="w-16 h-16 rounded-full border-2 border-pink-600">
-                    <div class="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">📸</div>
-                </div>
-                <input type="file" id="avatar-upload" class="hidden" accept="image/*">
+                <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" class="w-16 h-16 rounded-full border-2 border-pink-600">
                 <div class="flex-grow">
                     <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-2 rounded w-full text-sm font-bold" placeholder="Change Name">
                     <button onclick="updateProfile()" class="mt-2 text-[10px] font-black uppercase text-pink-600">Save Changes</button>
                 </div>
             </div>
             <div id="auth-section" class="flex flex-col gap-2 pt-4 border-t border-gray-900">
-                <p class="text-[10px] text-gray-500 uppercase font-black">Account: <span id="auth-status">Guest</span></p>
                 <button onclick="handleAuth()" id="auth-btn" class="bg-white text-black font-black py-3 rounded-xl uppercase text-xs">Sign In / Sign Up</button>
             </div>
         </div>
     </div>
 
+    <div id="share-preview-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Share The Burn</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div class="w-full aspect-square bg-black rounded-lg overflow-hidden mb-4 border border-gray-800">
+            <img id="final-share-image" class="w-full h-full object-contain" src="">
+        </div>
+        <button id="downloadCardBtn" class="w-full bg-white text-black font-black py-4 rounded-xl uppercase text-xs">Download Image</button>
+        <p class="text-[8px] text-gray-600 text-center uppercase font-black mt-3">Hold image to save or share to Facebook/Instagram</p>
+    </div>
+
     <div id="leaderboard-modal" class="central-modal">
         <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Hall of Shame</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div class="mb-4">
-            <input type="text" id="leaderboard-search" oninput="fetchLeaderboard(this.value)" placeholder="Search losers..." class="w-full bg-black border border-gray-800 text-white p-3 rounded-xl text-[10px] font-black uppercase tracking-widest outline-none focus:border-pink-600">
-        </div>
-        <div id="leaderboard-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1"></div>
+        <input type="text" id="leaderboard-search" oninput="fetchLeaderboard(this.value)" placeholder="Search losers..." class="w-full bg-black border border-gray-800 text-white p-3 rounded-xl text-[10px] font-black uppercase mb-4 outline-none">
+        <div id="leaderboard-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto"></div>
     </div>
-
-    <div id="shop-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-yellow-500">Black Market</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <button class="w-full bg-[#111] border border-yellow-900/50 p-4 rounded-xl flex justify-between items-center">
-            <div class="text-left"><p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p><p class="text-[9px] text-gray-500 uppercase">+20 Aura</p></div>
-            <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$0.99</span>
-        </button>
-    </div>
-
-    <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col overflow-y-auto">
-        <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold tracking-widest">Close ✕</button>
-        <div class="mb-8 cursor-pointer" onclick="openModal('profile-modal')">
-            <div class="flex items-center gap-3 mb-6">
-                <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" class="w-10 h-10 border border-pink-600 rounded-full">
-                <div class="text-left">
-                    <p id="username-display" class="font-bold text-white text-sm italic">Guest Loser</p>
-                    <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest">Level <span id="lvl-num">1</span></p>
-                </div>
-            </div>
-            <div class="xp-bar-bg"><div id="xp-progress"></div></div>
-        </div>
-        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Packs</h3>
-        <div id="unlocked-packs" class="flex flex-col gap-2 mb-8"></div>
-        <h3 class="text-[10px] font-black uppercase text-gray-700 mb-4 tracking-widest">Locked</h3>
-        <div id="locked-packs" class="flex flex-col gap-2"></div>
-    </aside>
 
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
         <div class="flex items-center gap-3">
             <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
-            <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
             <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800">☰</button>
         </div>
     </header>
 
     <main class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
         <div id="message-container" class="max-w-2xl">
-            <h1 id="message" class="text-5xl md:text-7xl font-black mb-4 uppercase italic">Ready to be roasted?</h1>
-            <p id="subtext" class="text-gray-500 text-sm md:text-base mb-8 h-6 tracking-wide"></p>
-            <div id="action-row" class="flex items-center justify-center gap-3 opacity-0 transition-opacity">
-                <button id="copyBtn" class="text-gray-500 hover:text-white uppercase text-[9px] font-black tracking-widest bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800">Copy 📋</button>
-                <button id="shareBtn" class="text-gray-500 hover:text-white uppercase text-[9px] font-black tracking-widest bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800">Share 🔗</button>
-                <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800 text-gray-400">🔊</button>
+            <h1 id="message" class="text-5xl md:text-7xl font-black mb-4 uppercase italic">Ready?</h1>
+            <p id="subtext" class="text-gray-500 text-sm mb-8 h-6"></p>
+            <div id="action-row" class="flex items-center justify-center gap-3 opacity-0">
+                <button id="copyBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Copy</button>
+                <button id="shareBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Visual Share</button>
+                <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
             </div>
         </div>
     </main>
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
         <div class="flex justify-between items-end px-2">
-            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Impacts</p></div>
-            <div class="text-right"><p id="aura-text" class="text-xl font-black leading-none text-pink-600">20</p><div class="w-20 h-1 bg-gray-900 rounded-full mt-1 overflow-hidden"><div id="aura-progress" style="width: 100%"></div></div></div>
+            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Impacts</p></div>
+            <div class="text-right"><p id="aura-text" class="text-xl font-black text-pink-600">20</p><div class="w-20 h-1 bg-gray-900 rounded-full mt-1 overflow-hidden"><div id="aura-progress" style="width: 100%"></div></div></div>
         </div>
-        <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">Get Roasted</button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all shadow-2xl">Get Roasted</button>
     </footer>
+
+    <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col overflow-y-auto">
+        <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
+        <div class="mb-8 cursor-pointer" onclick="openModal('profile-modal')">
+            <div class="flex items-center gap-3 mb-4">
+                <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" class="w-10 h-10 border border-pink-600 rounded-full">
+                <div class="text-left"><p id="username-display" class="font-bold text-sm italic">Guest Loser</p><p class="text-[9px] text-gray-500 font-black">Level <span id="lvl-num">1</span></p></div>
+            </div>
+            <div class="w-full h-1 bg-gray-900 rounded-full overflow-hidden"><div id="xp-progress"></div></div>
+        </div>
+        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4">Packs</h3>
+        <div id="unlocked-packs" class="flex flex-col gap-2"></div>
+    </aside>
 
     <script>
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, localCount = 0, currentLang = 'nl-US', activePackId = 2, currentLevel = 1;
-        let aura = 20;
+        let currentUser = null, localCount = 0, currentLang = 'en-US', activePackId = 2, currentLevel = 1, aura = 20;
         let unlockedPackIds = [1, 2, 5];
 
         const packs = [
-            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇬🇧", minLevel: 0 },
+            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", minLevel: 0 },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
-            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 },
-            { id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 250 },
-            { id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 250 },
-            { id: 6, name: "Dark Spanish", lang: "es-ES", emoji: "💀", minLevel: 250 }
+            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 }
         ];
 
+        // --- Visual Share Card Logic ---
+        function generateShareCard() {
+            const canvas = document.getElementById('shareCanvas');
+            const ctx = canvas.getContext('2d');
+            const text = document.getElementById('message').innerText.toUpperCase();
+
+            ctx.fillStyle = '#050505';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.font = '900 70px Inter, sans-serif';
+
+            const words = text.split(' ');
+            let line = '', lines = [], maxWidth = 850, lineHeight = 90;
+            for (let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                if (ctx.measureText(testLine).width > maxWidth && n > 0) { lines.push(line); line = words[n] + ' '; }
+                else { line = testLine; }
+            }
+            lines.push(line);
+
+            let y = (canvas.height - (lines.length * lineHeight)) / 2 + 50;
+            lines.forEach(l => { ctx.fillText(l.trim(), canvas.width / 2, y); y += lineHeight; });
+
+            ctx.font = '900 35px Inter, sans-serif';
+            ctx.fillStyle = '#db2777';
+            ctx.fillText('KUTAPP.IO', canvas.width / 2, canvas.height - 100);
+
+            const dataUrl = canvas.toDataURL('image/png');
+            document.getElementById('final-share-image').src = dataUrl;
+            document.getElementById('downloadCardBtn').onclick = () => {
+                const link = document.createElement('a');
+                link.download = 'kutapp-reality-check.png';
+                link.href = dataUrl;
+                link.click();
+            };
+            openModal('share-preview-modal');
+        }
+
+        // --- Core Functions ---
         async function fetchLeaderboard(search = "") {
             const list = document.getElementById('leaderboard-list');
             let query = sb.from('profiles').select('username, impacts, avatar_url').order('impacts', { ascending: false }).limit(20);
             if (search) query = query.ilike('username', `%${search}%`);
-            const { data, error } = await query;
-            if (error) return;
-            list.innerHTML = data.map((user, i) => `
+            const { data } = await query;
+            list.innerHTML = data?.map((u, i) => `
                 <div class="flex items-center justify-between bg-[#111] p-3 rounded-xl border border-gray-800">
                     <div class="flex items-center gap-3">
-                        <span class="text-gray-700 font-black text-[10px] w-4">${i + 1}</span>
-                        <img src="${user.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + user.username}" class="w-6 h-6 rounded-full border border-pink-600/20">
-                        <p class="text-xs font-bold ${user.username === currentUser?.username ? 'text-pink-600' : 'text-white'} truncate max-w-[120px]">${user.username || 'Anonymous'}</p>
+                        <span class="text-gray-700 font-black text-[10px] w-4">${i+1}</span>
+                        <img src="${u.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + u.username}" class="w-6 h-6 rounded-full">
+                        <p class="text-xs font-bold text-white">${u.username || 'Anon'}</p>
                     </div>
-                    <div class="text-right"><p class="text-[9px] font-black text-gray-500 uppercase">${user.impacts || 0} Impacts</p></div>
+                    <p class="text-[9px] font-black text-gray-500 uppercase">${u.impacts || 0} Impacts</p>
                 </div>
-            `).join('');
-        }
-
-        async function updateProfile() {
-            const newName = document.getElementById('username-input').value;
-            if (!newName) return;
-            const { error } = await sb.from('profiles').update({ username: newName }).eq('id', currentUser.id);
-            if (!error) {
-                document.getElementById('username-display').innerText = newName;
-                alert("Profile Updated!");
-            }
-        }
-
-        async function handleAuth() {
-            const email = prompt("Enter email for magic link:");
-            if (!email) return;
-            const { error } = await sb.auth.signInWithOtp({ email });
-            if (!error) alert("Check email for link!");
+            `).join('') || '';
         }
 
         function updateStatsUI() {
             document.getElementById('counter').innerText = localCount;
             document.getElementById('aura-text').innerText = aura;
             document.getElementById('aura-progress').style.width = `${(aura / 20) * 100}%`;
-            const newLevel = Math.floor(localCount / 10) + 1;
-            if (newLevel > currentLevel) { currentLevel = newLevel; showLevelUp(); }
+            currentLevel = Math.floor(localCount / 10) + 1;
             document.getElementById('lvl-num').innerText = currentLevel;
             document.getElementById('xp-progress').style.width = `${((localCount % 10) / 10) * 100}%`;
             renderPacks();
         }
 
-        function showLevelUp() {
-            const toast = document.getElementById('level-toast');
-            toast.innerText = `LEVEL ${currentLevel} REACHED! 🚀`;
-            toast.classList.add('show');
-            confetti({ particleCount: 150, spread: 100, origin: { y: 0.2 } });
-            setTimeout(() => toast.classList.remove('show'), 4000);
-        }
-
         function renderPacks() {
-            const unlockedContainer = document.getElementById('unlocked-packs');
-            const lockedContainer = document.getElementById('locked-packs');
-            unlockedContainer.innerHTML = ''; lockedContainer.innerHTML = '';
+            const container = document.getElementById('unlocked-packs');
+            container.innerHTML = '';
             packs.forEach(p => {
-                const isOwned = unlockedPackIds.includes(p.id);
-                const reqLevel = (p.minLevel / 10) + 1;
                 const card = document.createElement('div');
-                card.className = `pack-card ${!isOwned && currentLevel < reqLevel ? 'locked' : ''} ${activePackId === p.id && isOwned ? 'active' : ''}`;
+                card.className = `pack-card ${activePackId === p.id ? 'active' : ''}`;
                 card.innerHTML = `<span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>`;
-                if (isOwned) {
-                    card.onclick = () => { activePackId = p.id; currentLang = p.lang; renderPacks(); };
-                    unlockedContainer.appendChild(card);
-                } else {
-                    lockedContainer.appendChild(card);
-                }
+                card.onclick = () => { activePackId = p.id; currentLang = p.lang; renderPacks(); };
+                container.appendChild(card);
             });
         }
 
@@ -246,7 +236,6 @@
             if (aura <= 0) return alert("Zero Aura remaining.");
             const btn = document.getElementById('actionBtn');
             btn.classList.add('cooldown-active');
-            
             const { data: pool } = await sb.from('phrases').select('*').eq('pack_id', activePackId);
             if (pool?.length) {
                 aura--; localCount++;
@@ -254,36 +243,40 @@
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = item.translation;
                 document.getElementById('action-row').style.opacity = "1";
-                
                 await sb.from('profiles').update({ impacts: localCount, aura_balance: aura }).eq('id', currentUser.id);
                 updateStatsUI();
             }
             setTimeout(() => btn.classList.remove('cooldown-active'), 2000);
         });
 
+        document.getElementById('copyBtn').onclick = () => {
+            navigator.clipboard.writeText(document.getElementById('message').innerText);
+            alert("Copied!");
+        };
+
+        document.getElementById('shareBtn').onclick = generateShareCard;
+
+        document.getElementById('speakBtn').onclick = () => {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
+            u.lang = currentLang;
+            window.speechSynthesis.speak(u);
+        };
+
         window.openModal = (id) => { closeAllModals(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.add('hidden'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
 
-        document.getElementById('copyBtn').addEventListener('click', () => {
-            navigator.clipboard.writeText(document.getElementById('message').innerText);
-            document.getElementById('copyBtn').innerText = 'OK! ✅';
-            setTimeout(() => document.getElementById('copyBtn').innerText = 'Copy 📋', 1500);
-        });
-
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
-            const { data: profile } = await sb.from('profiles').select('impacts, aura_balance, username, avatar_url').eq('id', currentUser.id).single();
-            
+            const { data: profile } = await sb.from('profiles').select('impacts, aura_balance, username').eq('id', currentUser.id).single();
             if (profile) {
                 localCount = profile.impacts || 0;
                 aura = profile.aura_balance !== null ? profile.aura_balance : 20;
                 document.getElementById('username-display').innerText = profile.username || "Guest Loser";
-                document.getElementById('sidebar-avatar').src = profile.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + (profile.username || 'Lucky');
             } else {
-                await sb.from('profiles').insert([{ id: currentUser.id, impacts: 0, aura_balance: 20, username: 'Guest Loser' }]);
-                localCount = 0; aura = 20;
+                await sb.from('profiles').insert([{ id: currentUser.id, impacts: 0, aura_balance: 20 }]);
             }
             updateStatsUI();
         }
