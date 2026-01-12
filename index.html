@@ -11,22 +11,32 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; }
         
-        /* Modals & Sidebar */
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
         
         .central-modal { 
             position: fixed; top: 15%; left: 50%; transform: translateX(-50%) scale(0.9);
             width: 90%; max-width: 400px; background: #0a0a0a; border: 1px solid #222;
-            border-radius: 24px; z-index: 60; display: none; padding: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); opacity: 0; transition: all 0.3s ease;
+            border-radius: 24px; z-index: 60; display: none; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); opacity: 0; transition: all 0.3s ease;
         }
         .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
 
-        /* Styling */
-        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; }
+        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; position: relative; overflow: hidden; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; }
         .pack-card.locked { opacity: 0.3; filter: grayscale(1); cursor: not-allowed; border: 1px dashed #333; }
+        .pack-card.available-to-unlock { opacity: 1; filter: none; border: 1px solid #db2777; background: #0f0f0f; }
+
+        /* Hold to Unlock Animation */
+        .unlock-progress-ring {
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+            width: 24px; height: 24px; pointer-events: none; display: none;
+        }
+        .unlock-progress-ring circle {
+            fill: none; stroke: #db2777; stroke-width: 3;
+            stroke-dasharray: 75; stroke-dashoffset: 75;
+            transition: stroke-dashoffset 1.5s linear;
+        }
+        .holding circle { stroke-dashoffset: 0; }
 
         .ticker-wrap { width: 100%; overflow: hidden; background: #0a0a0a; border-bottom: 1px solid #1a1a1a; height: 32px; display: flex; align-items: center; position: fixed; top: 0; z-index: 40; }
         .ticker-move { display: inline-block; white-space: nowrap; animation: ticker 25s linear infinite; color: #ffffff; font-weight: 900; }
@@ -35,10 +45,8 @@
         #aura-progress { height: 100%; background: linear-gradient(90deg, #db2777, #701a75); transition: width 0.3s ease; }
         #xp-progress { width: 0%; height: 100%; background: #db2777; transition: width 0.5s ease; }
 
-        /* Button Cooldown */
-        #actionBtn.cooldown-active { pointer-events: none; color: transparent; }
         #actionBtn.cooldown-active::after {
-            content: "RECOVERING AURA...";
+            content: "RECOVERING...";
             position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
             color: #444; font-size: 10px; letter-spacing: 2px;
             background: linear-gradient(to right, #222 50%, transparent 50%);
@@ -55,49 +63,33 @@
             <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">LIVE</span>
         </div>
         <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest font-black">
-            Hall of Shame is Live • Top Losers updated hourly • Don't run out of Aura •
+            Welcome to KutApp.io • Level up to unlock new rewards • Press and hold to claim packs •
         </div>
     </div>
 
     <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45]"></div>
 
     <div id="leaderboard-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-black uppercase italic tracking-tighter text-pink-600">Hall of Shame</h2>
-            <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
-        </div>
-        <div id="leaderboard-list" class="flex flex-col gap-3">
-            <p class="text-gray-600 text-[10px] uppercase text-center animate-pulse">Loading Losers...</p>
-        </div>
+        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-pink-600">Hall of Shame</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div id="leaderboard-list" class="flex flex-col gap-3"></div>
     </div>
 
     <div id="shop-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-black uppercase italic tracking-tighter text-yellow-500">Black Market</h2>
-            <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
-        </div>
-        <div class="flex flex-col gap-3">
-            <button class="bg-[#111] border border-yellow-900/50 p-4 rounded-xl flex justify-between items-center group active:scale-95 transition-all">
-                <div class="text-left">
-                    <p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p>
-                    <p class="text-[9px] text-gray-500 uppercase">Instant +20 Aura Reserve</p>
-                </div>
-                <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$0.99</span>
-            </button>
-            <div class="p-4 rounded-xl border border-gray-900 opacity-40 text-center">
-                <p class="text-[9px] uppercase font-bold text-gray-600">Premium Packs coming soon</p>
-            </div>
-        </div>
+        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-yellow-500">Black Market</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <button class="w-full bg-[#111] border border-yellow-900/50 p-4 rounded-xl flex justify-between items-center">
+            <div class="text-left"><p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p><p class="text-[9px] text-gray-500 uppercase">+20 Aura</p></div>
+            <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$0.99</span>
+        </button>
     </div>
 
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col overflow-y-auto">
-        <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
+        <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold tracking-widest">Close ✕</button>
         
         <div class="mb-8">
             <div class="flex items-center gap-3 mb-6">
                 <div class="w-10 h-10 bg-pink-900/20 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600">P</div>
                 <div class="text-left">
-                    <p id="username-display" class="font-bold text-white text-sm">Annoying Pest</p>
+                    <p id="username-display" class="font-bold text-white text-sm italic">Annoying Pest</p>
                     <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest">Level <span id="lvl-num">1</span></p>
                 </div>
             </div>
@@ -107,28 +99,22 @@
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Available Packs</h3>
         <div id="unlocked-packs" class="flex flex-col gap-2 mb-8"></div>
 
-        <h3 class="text-[10px] font-black uppercase text-gray-700 mb-4 tracking-widest">Locked Packs</h3>
+        <h3 class="text-[10px] font-black uppercase text-gray-700 mb-4 tracking-widest">Locked / Available to Unlock</h3>
         <div id="locked-packs" class="flex flex-col gap-2"></div>
     </aside>
 
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase">KUTAPP<span class="text-pink-600">.IO</span></div>
         <div class="flex items-center gap-3">
-            <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 hover:border-pink-600">
-                🏆
-            </button>
-            <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800 hover:border-yellow-600">
-                🛒
-            </button>
-            <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800 hover:border-pink-600">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-            </button>
+            <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
+            <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
+            <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
         </div>
     </header>
 
     <main class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
         <div id="message-container" class="max-w-2xl">
-            <h1 id="message" class="text-5xl md:text-7xl font-black mb-4 uppercase italic">KUTAPP</h1>
+            <h1 id="message" class="text-5xl md:text-7xl font-black mb-4 uppercase italic">Ready to be roasted?</h1>
             <p id="subtext" class="text-gray-500 text-sm md:text-base mb-8 h-6 tracking-wide"></p>
             
             <div id="action-row" class="flex items-center justify-center gap-3 opacity-0 transition-opacity">
@@ -141,20 +127,10 @@
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
         <div class="flex justify-between items-end px-2">
-            <div>
-                <p id="counter" class="text-3xl font-black leading-none">0</p>
-                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Total Sufferings</p>
-            </div>
-            <div class="text-right">
-                <p id="aura-text" class="text-xl font-black leading-none text-pink-600">20</p>
-                <div class="w-20 h-1 bg-gray-900 rounded-full mt-1 overflow-hidden">
-                    <div id="aura-progress" style="width: 100%"></div>
-                </div>
-            </div>
+            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Failures</p></div>
+            <div class="text-right"><p id="aura-text" class="text-xl font-black leading-none text-pink-600">20</p><div class="w-20 h-1 bg-gray-900 rounded-full mt-1 overflow-hidden"><div id="aura-progress" style="width: 100%"></div></div></div>
         </div>
-        <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">
-            Reject Me
-        </button>
+        <button id="actionBtn" class="relative w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all overflow-hidden shadow-2xl">Reject Me</button>
     </footer>
 
     <script>
@@ -164,64 +140,98 @@
 
         let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1;
         let aura = parseInt(localStorage.getItem('userAura')) || 20;
+        let unlockedPackIds = JSON.parse(localStorage.getItem('unlockedPacks')) || [1, 2, 5]; // Defaults
 
         const packs = [
-			{ id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
-			{ id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
-			{ id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 },
-			{ id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 25 },
-			{ id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 25 },
-			{ id: 6, name: "Dark Spanish", lang: "es-ES", emoji: "💀", minLevel: 25 }
-		];
-
-        const ranks = [
-            { threshold: 0, title: "Annoying Pest", max: 25 },
-            { threshold: 25, title: "Local Nuisance", max: 75 },
-            { threshold: 75, title: "Professional Failure", max: 150 },
-            { threshold: 150, title: "Legendary Outcast", max: 1000 }
+            { id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
+            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
+            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", minLevel: 0 },
+            { id: 3, name: "Amsterdam Grit", lang: "nl-NL", emoji: "🏙️", minLevel: 25 },
+            { id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 25 },
+            { id: 6, name: "Dark Spanish", lang: "es-ES", emoji: "💀", minLevel: 25 }
         ];
 
-        // --- Core UI Logic ---
-        function fitText(text) {
-            const el = document.getElementById('message');
-            el.classList.remove('text-7xl', 'text-5xl', 'text-4xl', 'text-2xl');
-            if (text.length > 80) el.classList.add('text-2xl');
-            else if (text.length > 50) el.classList.add('text-4xl');
-            else if (text.length > 30) el.classList.add('text-5xl');
-            else el.classList.add('text-7xl');
+        let holdTimer;
+
+        function updateStatsUI() {
+            document.getElementById('counter').innerText = localCount;
+            document.getElementById('aura-text').innerText = aura;
+            document.getElementById('aura-progress').style.width = `${(aura / 20) * 100}%`;
+            const level = Math.floor(localCount / 10) + 1;
+            document.getElementById('lvl-num').innerText = level;
+            document.getElementById('xp-progress').style.width = `${((localCount % 10) / 10) * 100}%`;
+            renderPacks(level);
         }
 
-        async function fetchLeaderboard() {
-            const list = document.getElementById('leaderboard-list');
-            const { data } = await sb.from('profiles').select('*').order('lifetime_clicks', { ascending: false }).limit(5);
-            if (data) {
-                list.innerHTML = data.map((u, i) => `
-                    <div class="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-gray-900">
-                        <div class="flex items-center gap-3">
-                            <span class="text-pink-600 font-black italic">#${i+1}</span>
-                            <div class="text-left">
-                                <p class="text-[10px] font-bold uppercase text-white">${u.username || 'Anonymous Loser'}</p>
-                                <p class="text-[8px] text-gray-500 uppercase">${u.lifetime_clicks} ROASTS</p>
-                            </div>
-                        </div>
-                        <span class="text-[18px]">${i === 0 ? '👑' : '💀'}</span>
+        function renderPacks(currentLevel) {
+            const unlocked = document.getElementById('unlocked-packs');
+            const locked = document.getElementById('locked-packs');
+            unlocked.innerHTML = ''; locked.innerHTML = '';
+
+            packs.forEach(p => {
+                const isOwned = unlockedPackIds.includes(p.id);
+                const canUnlock = currentLevel >= (p.minLevel / 10) + 1;
+                
+                const card = document.createElement('div');
+                card.className = `pack-card ${!isOwned && !canUnlock ? 'locked' : ''} ${!isOwned && canUnlock ? 'available-to-unlock' : ''} ${activePackId === p.id && isOwned ? 'active' : ''}`;
+                
+                card.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
+                        ${!isOwned ? `<span class="text-[8px] font-bold text-pink-600">${canUnlock ? 'HOLD TO UNLOCK' : 'LVL ' + (p.minLevel/10 + 1)}</span>` : ''}
                     </div>
-                `).join('');
-            }
+                    ${!isOwned && canUnlock ? `
+                    <svg class="unlock-progress-ring" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12"/></svg>
+                    ` : ''}
+                `;
+
+                if (isOwned) {
+                    card.onclick = () => { activePackId = p.id; currentLang = p.lang; renderPacks(currentLevel); };
+                    unlocked.appendChild(card);
+                } else {
+                    if (canUnlock) {
+                        card.onmousedown = () => startUnlock(p.id, card);
+                        card.onmouseup = card.onmouseleave = cancelUnlock;
+                        card.ontouchstart = (e) => { e.preventDefault(); startUnlock(p.id, card); };
+                        card.ontouchend = cancelUnlock;
+                    }
+                    locked.appendChild(card);
+                }
+            });
         }
 
+        function startUnlock(id, el) {
+            el.classList.add('holding');
+            const ring = el.querySelector('.unlock-progress-ring');
+            if (ring) ring.style.display = 'block';
+            
+            holdTimer = setTimeout(() => {
+                unlockedPackIds.push(id);
+                localStorage.setItem('unlockedPacks', JSON.stringify(unlockedPackIds));
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                updateStatsUI();
+            }, 1500);
+        }
+
+        function cancelUnlock(e) {
+            clearTimeout(holdTimer);
+            const el = e.currentTarget;
+            el.classList.remove('holding');
+            const ring = el.querySelector('.unlock-progress-ring');
+            if (ring) ring.style.display = 'none';
+        }
+
+        // --- Standard Logic ---
         document.getElementById('actionBtn').addEventListener('click', async () => {
             if (aura <= 0) return alert("Zero Aura remaining.");
             const btn = document.getElementById('actionBtn');
             btn.classList.add('cooldown-active');
-
             aura--; localStorage.setItem('userAura', aura);
+            
             const { data: pool } = await sb.from('phrases').select('*').eq('pack_id', activePackId);
-
             if (pool?.length) {
                 const item = pool[Math.floor(Math.random() * pool.length)];
                 document.getElementById('message').innerText = item.content;
-                fitText(item.content);
                 document.getElementById('subtext').innerText = item.translation;
                 document.getElementById('action-row').style.opacity = "1";
                 localCount++; updateStatsUI();
@@ -230,74 +240,9 @@
             setTimeout(() => btn.classList.remove('cooldown-active'), 2000);
         });
 
-        const updateStatsUI = () => {
-            document.getElementById('counter').innerText = localCount;
-            document.getElementById('aura-text').innerText = aura;
-            document.getElementById('aura-progress').style.width = `${(aura / 20) * 100}%`;
-            
-            const currentRank = [...ranks].reverse().find(r => localCount >= r.threshold);
-            const level = Math.floor(localCount / 10) + 1;
-            document.getElementById('lvl-num').innerText = level;
-            document.getElementById('username-display').innerText = currentRank.title;
-            document.getElementById('xp-progress').style.width = `${((localCount % 10) / 10) * 100}%`;
-            renderPacks(level);
-        };
-
-        const renderPacks = (level) => {
-            const unlocked = document.getElementById('unlocked-packs');
-            const locked = document.getElementById('locked-packs');
-            unlocked.innerHTML = ''; locked.innerHTML = '';
-
-            packs.forEach(p => {
-                const isLocked = level < (p.minLevel / 10) + 1;
-                const card = `
-                    <div class="pack-card ${isLocked ? 'locked' : (activePackId === p.id ? 'active' : '')}" 
-                         onclick="${isLocked ? '' : `setLang('${p.lang}', ${p.id})`}">
-                        <div class="flex justify-between items-center">
-                            <span class="text-[10px] font-black uppercase tracking-tighter">${p.emoji} ${p.name}</span>
-                            ${isLocked ? `<span class="text-[8px] font-bold text-pink-600">LVL ${p.minLevel/10 + 1}</span>` : ''}
-                        </div>
-                    </div>`;
-                if (isLocked) locked.innerHTML += card;
-                else unlocked.innerHTML += card;
-            });
-        };
-
-        // --- Modals ---
-        window.openModal = (id) => {
-            closeAllModals();
-            document.getElementById(id).classList.add('active');
-            document.getElementById('overlay').classList.remove('hidden');
-        };
-        window.closeAllModals = () => {
-            document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active'));
-            document.getElementById('sidebar').classList.remove('open');
-            document.getElementById('overlay').classList.add('hidden');
-        };
-        window.toggleSidebar = () => {
-            document.getElementById('sidebar').classList.add('open');
-            document.getElementById('overlay').classList.remove('hidden');
-        };
-
-        window.setLang = (lang, id) => { currentLang = lang; activePackId = id; renderPacks(Math.floor(localCount / 10) + 1); };
-
-        document.getElementById('copyBtn').addEventListener('click', () => {
-            navigator.clipboard.writeText(document.getElementById('message').innerText);
-            document.getElementById('copyBtn').innerText = 'OK! ✅';
-            setTimeout(() => document.getElementById('copyBtn').innerText = 'Copy 📋', 1500);
-        });
-
-        document.getElementById('shareBtn').addEventListener('click', () => {
-            const text = `"${document.getElementById('message').innerText}" - Get Roasted on KutApp.io`;
-            navigator.share ? navigator.share({ text }) : alert("Copy this: " + text);
-        });
-
-        document.getElementById('speakBtn').addEventListener('click', () => {
-			window.speechSynthesis.cancel();
-			const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-			utterance.lang = currentLang;
-			window.speechSynthesis.speak(utterance);
-		});
+        window.openModal = (id) => { closeAllModals(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
+        window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('sidebar').classList.remove('open'); document.getElementById('overlay').classList.add('hidden'); };
+        window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
 
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
