@@ -3,10 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta property="og:title" content="KutApp.io | Certified Failure">
-	<meta property="og:description" content="Log your rejections and climb the leaderboard of losers.">
-	<meta property="og:image" content="link-to-a-screenshot-of-your-app.png">
-	<meta name="twitter:card" content="summary_large_image">
     <title>KutApp.io | Get Lost</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -18,16 +14,19 @@
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
         input, textarea { background: #111; border: 1px solid #333; color: white; padding: 10px; border-radius: 8px; width: 100%; font-size: 13px; margin-bottom: 8px; outline: none; }
-        textarea { height: 60px; resize: none; }
+        
         .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; }
         .accordion-content.open { max-height: 800px; }
         
+        /* Pack Card Styling */
+        .pack-card { background: #111; border: 1px solid #333; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; }
+        .pack-card.locked { opacity: 0.5; filter: grayscale(1); cursor: not-allowed; }
+        .pack-card.active { border-color: #db2777; background: #1a0a10; }
+
         @keyframes globalShake {
             0% { transform: translate(1px, 1px) rotate(0deg); }
             20% { transform: translate(-3px, 0px) rotate(-1deg); }
             40% { transform: translate(3px, 2px) rotate(1deg); }
-            60% { transform: translate(-1px, -1px) rotate(1deg); }
-            80% { transform: translate(-3px, 1px) rotate(-1deg); }
             100% { transform: translate(1px, -2px) rotate(0deg); }
         }
         .sabotage-shake { animation: globalShake 0.4s infinite; background-color: #450a19 !important; }
@@ -43,7 +42,6 @@
         .animate-pop { animation: insultPop 0.2s ease-out forwards; }
         #share-modal { display: none; }
         #share-modal.active { display: flex; }
-        .certificate-bg { background: linear-gradient(45deg, #0a0a0a, #000); border: 2px solid #db2777; }
     </style>
 </head>
 <body id="body-tag" class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
@@ -51,28 +49,26 @@
     <div class="ticker-wrap">
         <div class="flex items-center px-4 border-r border-gray-800 bg-[#0a0a0a] z-10 h-full gap-2">
             <span class="h-1.5 w-1.5 bg-pink-600 rounded-full animate-pulse"></span>
-            <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">Global</span>
+            <span class="text-[8px] font-black uppercase text-pink-600 tracking-widest">LIVE</span>
         </div>
         <div id="global-ticker" class="ticker-move text-[10px] uppercase tracking-widest">
-            Welcome to KutApp.io • Level up your failure today • 
+            Welcome to KutApp.io • Log your failures • Unlock new ways to be insulted • 
         </div>
     </div>
 
     <div id="overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 hidden z-[45]"></div>
 
     <div id="share-modal" class="fixed inset-0 z-[110] items-center justify-center p-6 bg-black/95">
-        <div class="certificate-bg p-8 rounded-3xl max-w-sm w-full text-center relative shadow-[0_0_60px_rgba(219,39,119,0.2)]">
-            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 text-[10px] font-bold uppercase">✕</button>
-            <h2 class="text-3xl font-black italic uppercase leading-none mb-2">Certified Failure</h2>
+        <div class="bg-black border-2 border-pink-600 p-8 rounded-3xl max-w-sm w-full text-center relative shadow-[0_0_60px_rgba(219,39,119,0.2)]">
+            <button onclick="toggleShareModal()" class="absolute top-4 right-4 text-gray-500 font-bold uppercase">✕</button>
+            <h2 class="text-3xl font-black italic uppercase mb-2">Failure Report</h2>
             <p id="current-rank-label" class="text-pink-600 font-bold text-[10px] uppercase tracking-[0.2em] mb-4">Annoying Pest</p>
-            <div class="bg-black/40 py-8 rounded-2xl border border-gray-800 mb-6">
-                <div id="share-count" class="text-6xl font-black text-white">0</div>
-                <div class="text-[9px] uppercase font-bold text-gray-500 mt-2">Rejections Logged</div>
+            <div class="bg-zinc-900 py-8 rounded-2xl mb-6">
+                <div id="share-count" class="text-6xl font-black">0</div>
+                <div class="text-[9px] uppercase font-bold text-gray-500 mt-2">Rejections</div>
             </div>
-            <div class="flex flex-col gap-2">
-                <button onclick="copyShareLink()" class="w-full bg-white text-black font-black py-4 rounded-xl uppercase text-xs">Copy Stats Link</button>
-                <button onclick="shareToX()" class="w-full bg-[#1da1f2] text-white font-black py-4 rounded-xl uppercase text-xs">Share on X</button>
-            </div>
+            <button onclick="shareToX()" class="w-full bg-[#1da1f2] text-white font-black py-4 rounded-xl uppercase text-xs mb-2">Share on X</button>
+            <button onclick="copyShareLink()" class="w-full bg-white text-black font-black py-4 rounded-xl uppercase text-xs">Copy Link</button>
         </div>
     </div>
 
@@ -80,26 +76,18 @@
         <button onclick="toggleSidebar()" class="text-gray-500 hover:text-white self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
         
         <div class="mb-4">
-            <button onclick="toggleAccordion('acc-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-black uppercase tracking-widest text-pink-600">
-                <span>Dashboard</span> <span>↓</span>
+            <button onclick="toggleAccordion('acc-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-black uppercase text-pink-600">
+                <span>Stats</span> <span>↓</span>
             </button>
             <div id="acc-content" class="accordion-content open pt-4">
-                <div id="logged-out-view">
-                    <input type="email" id="auth-email" placeholder="Email">
-                    <input type="password" id="auth-pass" placeholder="Password">
-                    <div class="flex gap-2">
-                        <button onclick="handleAuth('login')" class="w-1/2 bg-white text-black py-2 rounded-lg font-black text-[10px] uppercase">Login</button>
-                        <button onclick="handleAuth('signup')" class="w-1/2 border border-gray-700 text-white py-2 rounded-lg font-black text-[10px] uppercase">Sign Up</button>
-                    </div>
-                </div>
-                <div id="logged-in-view" class="hidden">
+                <div id="logged-in-view">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-12 h-12 bg-pink-900/30 border border-pink-600 rounded-full flex items-center justify-center font-black text-pink-600 text-xl" id="avatar-circle">
                             <span id="avatar-letter">?</span>
                         </div>
                         <div class="text-left">
-                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Username" class="mb-0 bg-transparent border-none p-0 font-bold text-white text-lg outline-none">
-                            <p class="text-[10px] text-gray-400 uppercase font-black">Online 🔥</p>
+                            <input type="text" id="username-input" onchange="updateUsername()" placeholder="Set Username" class="mb-0 bg-transparent border-none p-0 font-bold text-white text-lg">
+                            <p class="text-[10px] text-gray-400 uppercase font-black" id="streak-label">Online 🔥</p>
                         </div>
                     </div>
                     <div class="bg-[#0f0f0f] p-4 rounded-xl border border-gray-900 mb-6">
@@ -114,22 +102,21 @@
         </div>
 
         <div class="mb-4">
-            <button onclick="toggleAccordion('suggest-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest text-white">
-                <span>Submit a Roast</span> <span>↓</span>
+            <button onclick="toggleAccordion('pack-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase text-white tracking-widest">
+                <span>Phrase Packs</span> <span>↓</span>
             </button>
-            <div id="suggest-content" class="accordion-content pt-4">
-                <textarea id="suggest-input" placeholder="Type a Dutch or English insult..."></textarea>
-                <input type="text" id="suggest-trans" placeholder="Translation (optional)">
-                <button onclick="submitRoast()" id="submit-roast-btn" class="w-full bg-pink-600 text-white font-black py-3 rounded-lg text-[10px] uppercase">Send for Approval</button>
+            <div id="pack-content" class="accordion-content pt-4 flex flex-col gap-3" id="pack-list-container">
+                <div id="pack-list" class="flex flex-col gap-2"></div>
             </div>
         </div>
 
         <div class="mb-4">
-            <button onclick="fetchLeaderboard(); toggleAccordion('lead-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase tracking-widest text-white">
-                <span>Top Losers</span> <span>↓</span>
+            <button onclick="toggleAccordion('suggest-content')" class="w-full flex justify-between items-center py-3 border-b border-gray-800 text-sm font-bold uppercase text-white tracking-widest">
+                <span>Submit Roast</span> <span>↓</span>
             </button>
-            <div id="lead-content" class="accordion-content pt-4">
-                <div id="leaderboard-list" class="flex flex-col gap-3"></div>
+            <div id="suggest-content" class="accordion-content pt-4">
+                <textarea id="suggest-input" placeholder="Your insult..."></textarea>
+                <button onclick="submitRoast()" id="submit-roast-btn" class="w-full bg-pink-600 text-white font-black py-3 rounded-lg text-[10px] uppercase">Submit</button>
             </div>
         </div>
     </aside>
@@ -144,7 +131,7 @@
     <main class="text-center flex flex-grow flex-col justify-center items-center">
         <div id="message-container">
             <h1 id="message" class="text-5xl md:text-7xl font-black mb-6 uppercase italic">Welcome.</h1>
-            <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Select a pack in the sidebar)</p>
+            <p id="subtext" class="text-gray-500 text-lg mb-6 max-w-xs leading-tight">(Select a language pack to start)</p>
         </div>
         <button id="speakBtn" class="hidden bg-gray-900/50 p-4 rounded-full border border-gray-800 hover:border-pink-600 transition-all mb-4">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -155,13 +142,13 @@
         <div class="flex justify-between items-end px-2">
             <div class="text-left">
                 <p id="counter" class="text-3xl font-black leading-none">0</p>
-                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Rejections Logged</p>
+                <p class="text-[9px] uppercase font-bold text-gray-600 tracking-widest">Total Failures</p>
             </div>
             <button onclick="toggleShareModal()" class="p-3 bg-gray-900 rounded-xl border border-gray-800 text-gray-400 hover:text-pink-600">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             </button>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase active:scale-95 transition-all">Keep Going</button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase active:scale-95 transition-all">Reject Me</button>
     </footer>
 
     <script>
@@ -169,63 +156,106 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, localCount = 0, activePack = 1, currentLang = 'nl-NL';
+        let currentUser = null, localCount = 0, currentLang = 'nl-NL', activePackId = 1;
+        let phraseHistory = []; // Anti-repeat buffer
 
-        const ranks = [
-            { threshold: 0, title: "Annoying Pest", max: 10 },
-            { threshold: 10, title: "Local Nuisance", max: 50 },
-            { threshold: 50, title: "Professional Failure", max: 100 },
-            { threshold: 100, title: "Legendary Outcast", max: 1000 }
+        const packs = [
+            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", minLevel: 0 },
+            { id: 2, name: "Blunt English", lang: "en-GB", emoji: "🇬🇧", minLevel: 0 },
+            { id: 3, name: "Direct Amsterdam", lang: "nl-NL", emoji: "🏙️", minLevel: 25 },
+            { id: 4, name: "British Sarcasm", lang: "en-GB", emoji: "☕", minLevel: 25 }
         ];
 
-        const triggerSabotage = () => {
-            document.body.classList.add('sabotage-shake');
-            setTimeout(() => document.body.classList.remove('sabotage-shake'), 1200);
+        const ranks = [
+            { threshold: 0, title: "Annoying Pest", max: 25 },
+            { threshold: 25, title: "Local Nuisance", max: 75 },
+            { threshold: 75, title: "Professional Failure", max: 150 },
+            { threshold: 150, title: "Legendary Outcast", max: 1000 }
+        ];
+
+        // --- CORE LOGIC UPGRADE ---
+
+        document.getElementById('actionBtn').addEventListener('click', async () => {
+            // 1. Determine Pooled Packs (Current language packs <= localCount)
+            const unlockedPacks = packs
+                .filter(p => p.lang === currentLang && localCount >= p.minLevel)
+                .map(p => p.id);
+
+            // 2. Fetch pool
+            const { data: pool } = await sb.from('phrases').select('*').in('pack_id', unlockedPacks);
+
+            if (pool?.length) {
+                // 3. Filter history to avoid repeats
+                let available = pool.filter(p => !phraseHistory.includes(p.id));
+                if (available.length === 0) { phraseHistory = []; available = pool; }
+
+                const item = available[Math.floor(Math.random() * available.length)];
+                
+                // 4. Update history
+                phraseHistory.push(item.id);
+                if (phraseHistory.length > 15) phraseHistory.shift();
+
+                // 5. UI Updates
+                const msgBox = document.getElementById('message-container');
+                msgBox.classList.remove('animate-pop'); void msgBox.offsetWidth; msgBox.classList.add('animate-pop');
+                
+                document.getElementById('message').innerText = item.content;
+                document.getElementById('subtext').innerText = `(${item.translation})`;
+                document.getElementById('speakBtn').classList.remove('hidden');
+                
+                localCount++; 
+                updateStatsUI();
+                
+                // Milestone Confetti
+                if (ranks.some(r => localCount === r.threshold)) {
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#db2777', '#ffffff'] });
+                }
+
+                await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
+            }
+        });
+
+        const renderPacks = () => {
+            const container = document.getElementById('pack-list');
+            container.innerHTML = packs.map(p => {
+                const isLocked = localCount < p.minLevel;
+                const isActive = currentLang === p.lang;
+                return `
+                    <div class="pack-card ${isLocked ? 'locked' : ''} ${isActive && activePackId === p.id ? 'active' : ''}" 
+                         onclick="${isLocked ? '' : `setLang('${p.lang}', ${p.id})`}">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-black uppercase">${p.emoji} ${p.name}</span>
+                            ${isLocked ? `<span class="text-[9px] text-pink-600">🔒 LVL ${p.minLevel}</span>` : ''}
+                        </div>
+                    </div>`;
+            }).join('');
         };
 
-        const updateLevelUI = (count) => {
-            const current = [...ranks].reverse().find(r => count >= r.threshold);
-            document.getElementById('level-title').innerText = current.title;
-            document.getElementById('current-rank-label').innerText = current.title;
-            const progress = ((count - current.threshold) / (current.max - current.threshold)) * 100;
+        window.setLang = (lang, id) => { 
+            currentLang = lang; 
+            activePackId = id; 
+            phraseHistory = []; // Reset history when switching contexts
+            renderPacks(); 
+        };
+
+        // --- UTILS ---
+
+        const updateStatsUI = () => {
+            document.getElementById('counter').innerText = localCount;
+            const currentRank = [...ranks].reverse().find(r => localCount >= r.threshold);
+            document.getElementById('level-title').innerText = currentRank.title;
+            document.getElementById('current-rank-label').innerText = currentRank.title;
+            
+            const progress = ((localCount - currentRank.threshold) / (currentRank.max - currentRank.threshold)) * 100;
             document.getElementById('xp-progress').style.width = `${Math.min(progress, 100)}%`;
-            document.getElementById('xp-text').innerText = `${count}/${current.max}`;
+            document.getElementById('xp-text').innerText = `${localCount}/${currentRank.max}`;
+            renderPacks();
         };
 
-        // UI HELPERS
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
         window.toggleAccordion = (id) => document.getElementById(id).classList.toggle('open');
-        window.toggleShareModal = () => {
-            const m = document.getElementById('share-modal'); m.classList.toggle('active');
-            document.getElementById('share-count').innerText = localCount;
-        };
+        window.toggleShareModal = () => { document.getElementById('share-modal').classList.toggle('active'); document.getElementById('share-count').innerText = localCount; };
 
-        // SUBMISSION LOGIC
-        window.submitRoast = async () => {
-            const content = document.getElementById('suggest-input').value;
-            const translation = document.getElementById('suggest-trans').value;
-            const btn = document.getElementById('submit-roast-btn');
-            
-            if (!content) return alert("Type something first, loser.");
-            
-            btn.innerText = "Sending...";
-            const { error } = await sb.from('suggestions').insert([{ 
-                content, 
-                translation, 
-                author_name: document.getElementById('username-input')?.value || 'Anonymous' 
-            }]);
-
-            if (error) {
-                alert("Failed. Even our database rejects you.");
-            } else {
-                alert("Roast submitted. If it's funny, we'll add it.");
-                document.getElementById('suggest-input').value = '';
-                document.getElementById('suggest-trans').value = '';
-            }
-            btn.innerText = "Send for Approval";
-        };
-
-        // AUTH & PROFILE
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             if (!session) {
@@ -233,84 +263,38 @@
                 currentUser = data.user;
             } else {
                 currentUser = session.user;
-                if (!currentUser.is_anonymous) showLoggedIn(currentUser);
             }
-            loadProfile();
-            subscribeToActivity();
-        }
-
-        async function loadProfile() {
-            const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-            if (data) {
-                localCount = data.lifetime_clicks; 
-                updateStatsUI(); updateLevelUI(localCount);
-                if (data.username) {
-                    document.getElementById('username-input').value = data.username;
-                    document.getElementById('avatar-letter').innerText = data.username[0].toUpperCase();
-                }
+            
+            const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+            if (profile) {
+                localCount = profile.lifetime_clicks;
+                if (profile.username) document.getElementById('username-input').value = profile.username;
+            } else {
+                await sb.from('profiles').insert([{ id: currentUser.id, lifetime_clicks: 0 }]);
             }
-        }
-
-        function subscribeToActivity() {
-            sb.channel('public:profiles').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
+            
+            updateStatsUI();
+            
+            // Subscribe to Global Sabotage
+            sb.channel('global').on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, payload => {
                 const u = payload.new;
-                document.getElementById('global-ticker').innerText = `${u.username || 'Someone'} reached ${u.lifetime_clicks} rejections! • `.repeat(5);
-                if ([10, 50, 100, 250, 500].includes(u.lifetime_clicks)) triggerSabotage();
+                if ([25, 50, 100, 250].includes(u.lifetime_clicks)) {
+                    document.body.classList.add('sabotage-shake');
+                    setTimeout(() => document.body.classList.remove('sabotage-shake'), 1000);
+                }
             }).subscribe();
         }
 
-        document.getElementById('actionBtn').addEventListener('click', async () => {
-            const { data } = await sb.from('phrases').select('*').eq('pack_id', activePack);
-            if (data?.length) {
-                const item = data[Math.floor(Math.random() * data.length)];
-                document.getElementById('message-container').classList.remove('animate-pop'); void document.getElementById('message-container').offsetWidth; document.getElementById('message-container').classList.add('animate-pop');
-                document.getElementById('message').innerText = item.content;
-                document.getElementById('subtext').innerText = `(${item.translation})`;
-                document.getElementById('speakBtn').classList.remove('hidden');
-                
-                localCount++; updateStatsUI(); updateLevelUI(localCount);
-                if (ranks.some(r => localCount === r.threshold && localCount > 0)) {
-                    confetti({ particleCount: 200, spread: 80, origin: { y: 0.7 }, colors: ['#db2777', '#ffffff'] });
-                }
-                await sb.from('profiles').update({ lifetime_clicks: localCount }).eq('id', currentUser.id);
-            }
+        document.getElementById('speakBtn').addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
+            utterance.lang = currentLang;
+            window.speechSynthesis.speak(utterance);
         });
 
-        window.shareToX = () => {
-            const rank = document.getElementById('current-rank-label').innerText;
-            const text = encodeURIComponent(`I've logged ${localCount} rejections on KutApp.io and achieved the rank of "${rank}". Join the misery: `);
-            window.open(`https://twitter.com/intent/tweet?text=${text}&url=${window.location.href}`, '_blank');
+        window.updateUsername = async () => {
+            await sb.from('profiles').update({ username: document.getElementById('username-input').value }).eq('id', currentUser.id);
         };
-
-        window.copyShareLink = () => {
-            navigator.clipboard.writeText(`I have ${localCount} rejections on KutApp.io! Join me: ${window.location.href}`);
-            alert("Link copied!");
-        };
-
-        window.fetchLeaderboard = async () => {
-            const { data } = await sb.from('profiles').select('username, lifetime_clicks').order('lifetime_clicks', { ascending: false }).limit(5);
-            document.getElementById('leaderboard-list').innerHTML = (data || []).map((u, i) => `
-                <div class="flex justify-between items-center bg-gray-900/50 p-2 rounded border border-gray-800 text-[10px] font-bold">
-                    <div class="flex items-center gap-2">
-                        <span class="${i === 0 ? 'text-yellow-500' : ''}">#${i+1}</span>
-                        <span>${u.username || 'Anonymous'}</span>
-                    </div>
-                    <span class="text-pink-600">${u.lifetime_clicks}</span>
-                </div>`).join('');
-        };
-
-        window.handleAuth = async (type) => {
-            const e = document.getElementById('auth-email').value, p = document.getElementById('auth-pass').value;
-            const { error } = type === 'signup' ? await sb.auth.signUp({ email:e, password:p }) : await sb.auth.signInWithPassword({ email:e, password:p });
-            if (error) alert(error.message); else window.location.reload();
-        };
-
-        window.handleLogout = async () => { await sb.auth.signOut(); window.location.reload(); };
-        function updateStatsUI() { document.getElementById('counter').innerText = localCount; }
-        function showLoggedIn(user) {
-            document.getElementById('logged-out-view').classList.add('hidden');
-            document.getElementById('logged-in-view').classList.remove('hidden');
-        }
 
         init();
     </script>
