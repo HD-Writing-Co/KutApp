@@ -10,29 +10,20 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; }
-        
         .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
         .sidebar.open { transform: translateX(0); }
-        
         .central-modal { 
             position: fixed; top: 15%; left: 50%; transform: translateX(-50%) scale(0.9);
             width: 90%; max-width: 400px; background: #0a0a0a; border: 1px solid #222;
             border-radius: 24px; z-index: 60; display: none; padding: 24px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); opacity: 0; transition: all 0.3s ease;
         }
         .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
-
         .vibe-toggle { display: flex; background: #111; padding: 4px; border-radius: 50px; border: 1px solid #222; margin-bottom: 20px; }
         .vibe-btn { padding: 8px 20px; border-radius: 50px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: all 0.2s; cursor: pointer; }
         .vibe-btn.active { background: #db2777; color: white; }
-
-        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; transition: all 0.2s; cursor: pointer; margin-bottom: 8px; }
+        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 8px; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; }
-
         #aura-progress { height: 100%; transition: width 0.3s ease, background-color 0.3s ease; }
-        
-        .achievement-card { background: #111; border: 1px solid #222; padding: 10px; border-radius: 12px; margin-bottom: 8px; }
-        .achievement-progress { height: 4px; background: #222; border-radius: 2px; margin-top: 6px; overflow: hidden; }
-        .achievement-fill { height: 100%; background: #db2777; width: 0%; transition: width 0.5s; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
@@ -53,7 +44,6 @@
             <button id="roastMode" onclick="setMode('roast')" class="vibe-btn active">🔥 Roast</button>
             <button id="toastMode" onclick="setMode('toast')" class="vibe-btn">✨ Toast</button>
         </div>
-
         <div id="message-container" class="max-w-2xl">
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
             <p id="subtext" class="text-gray-500 text-sm mb-8 h-6"></p>
@@ -66,7 +56,7 @@
 
     <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
         <div class="flex justify-between items-end px-2">
-            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Total Impacts</p></div>
+            <div><p id="counter" class="text-3xl font-black leading-none">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Impacts</p></div>
             <div class="text-right">
                 <p id="aura-text" class="text-xl font-black text-pink-600">20/20</p>
                 <div class="w-24 h-1.5 bg-gray-900 rounded-full mt-1 overflow-hidden">
@@ -77,45 +67,35 @@
         <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl hover:bg-pink-600 hover:text-white uppercase transition-all shadow-2xl">Get Roasted</button>
     </footer>
 
+    <div id="profile-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800">
+            <img id="profile-img-modal" src="" class="w-24 h-24 rounded-full border-2 border-pink-600 mb-2">
+            <button onclick="shuffleAvatar()" class="text-[10px] font-black uppercase text-pink-600">Shuffle Avatar</button>
+            <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
+            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save Profile</button>
+        </div>
+    </div>
+
     <div id="leaderboard-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Hall of Shame</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <input type="text" id="leaderboard-search" oninput="fetchLeaderboard(this.value)" placeholder="Search users..." class="w-full bg-black border border-gray-800 text-white p-3 rounded-xl text-[10px] font-black uppercase mb-4 outline-none">
+        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
         <div id="leaderboard-list" class="flex flex-col gap-2 max-h-64 overflow-y-auto"></div>
     </div>
 
     <div id="shop-modal" class="central-modal">
         <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <button onclick="window.open('YOUR_STRIPE_LINK', '_blank')" class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center mb-3">
-            <div class="text-left"><p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p><p class="text-[9px] text-gray-500 uppercase">+20 Aura</p></div>
+        <button class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center mb-3">
+            <p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p>
             <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$0.99</span>
         </button>
-    </div>
-
-    <div id="profile-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile & Milestones</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div class="mb-6 bg-gray-900 p-4 rounded-xl border border-gray-800">
-            <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-2 rounded w-full text-sm font-bold" placeholder="Change Name">
-            <button onclick="updateProfile()" class="mt-2 text-[10px] font-black uppercase text-pink-600">Save Name</button>
-            <div id="auth-section" class="mt-4 pt-4 border-t border-gray-800 flex flex-col gap-2">
-                <button id="auth-btn" onclick="handleAuth()" class="bg-white text-black font-black py-2 rounded uppercase text-[10px]">Sign In / Sign Up</button>
-            </div>
-        </div>
-        <div class="achievement-card">
-            <div class="flex justify-between text-[10px] font-black uppercase"><span>Thick Skin</span><span id="skin-prog">0/1000</span></div>
-            <div class="achievement-progress"><div id="skin-fill" class="achievement-fill"></div></div>
-        </div>
-        <div class="achievement-card">
-            <div class="flex justify-between text-[10px] font-black uppercase"><span>Zen Master</span><span id="zen-prog">0/500</span></div>
-            <div class="achievement-progress"><div id="zen-fill" class="achievement-fill bg-yellow-500"></div></div>
-        </div>
     </div>
 
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
         <div class="mb-8 cursor-pointer" onclick="openModal('profile-modal')">
-            <div class="flex items-center gap-3 mb-2">
-                <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Lucky" class="w-10 h-10 border border-pink-600 rounded-full">
-                <div class="text-left"><p id="username-display" class="font-bold text-sm italic text-white">Guest</p></div>
+            <div class="flex items-center gap-3">
+                <img id="sidebar-avatar" src="" class="w-10 h-10 border border-pink-600 rounded-full">
+                <div class="text-left"><p id="username-display" class="font-bold text-sm text-white">Guest</p></div>
             </div>
         </div>
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4">Packs</h3>
@@ -129,7 +109,7 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, aura = 20, auraLimit = 20, totalRoasts = 0, totalToasts = 0, currentMode = 'roast', currentLang = 'en-US', activePackId = 2;
+        let currentUser = null, aura = 20, auraLimit = 20, totalRoasts = 0, totalToasts = 0, currentMode = 'roast', currentLang = 'en-US', activePackId = 2, currentAvatar = 'Lucky';
 
         const packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" },
@@ -137,7 +117,6 @@
             { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸" }
         ];
 
-        // --- Core Functions ---
         function setMode(mode) {
             currentMode = mode;
             document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active' : ''}`;
@@ -148,27 +127,21 @@
         async function triggerAction() {
             if (currentMode === 'roast') {
                 if (aura < 1) return openModal('shop-modal');
-                aura -= 1;
-                totalRoasts++;
+                aura -= 1; totalRoasts++;
             } else {
                 if (aura >= auraLimit) return alert("Aura Full!");
-                aura = Math.min(auraLimit, aura + 0.25);
-                totalToasts++;
-                confetti({ particleCount: 20, colors: ['#fbbf24'] });
+                aura = Math.min(auraLimit, aura + 0.25); totalToasts++;
             }
 
             const table = currentMode === 'roast' ? 'phrases' : 'affirmations';
-            const { data, error } = await sb.from(table).select('*').eq('pack_id', activePackId);
+            const { data } = await sb.from(table).select('*').eq('pack_id', activePackId);
             
-            if (data && data.length > 0) {
+            if (data?.length) {
                 const item = data[Math.floor(Math.random() * data.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = item.translation || '';
                 document.getElementById('action-row').style.opacity = "1";
-            } else {
-                document.getElementById('message').innerText = "Coming Soon!";
             }
-
             updateStatsUI();
             saveToDB();
         }
@@ -178,138 +151,88 @@
             document.getElementById('aura-text').innerText = `${aura.toFixed(1)}/${auraLimit}`;
             document.getElementById('aura-progress').style.width = `${(aura/auraLimit)*100}%`;
             document.getElementById('aura-progress').style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-            
-            // Achievement progress
-            document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
-            document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
-            document.getElementById('zen-prog').innerText = `${totalToasts}/500`;
-            document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
-
             renderPacks();
         }
 
         function renderPacks() {
-            const list = document.getElementById('pack-list');
-            list.innerHTML = packs.map(p => `
-                <div onclick="setActivePack(${p.id}, '${p.lang}')" class="pack-card ${activePackId === p.id ? 'active' : ''}">
+            document.getElementById('pack-list').innerHTML = packs.map(p => `
+                <div onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();" class="pack-card ${activePackId === p.id ? 'active' : ''}">
                     <span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
                 </div>
             `).join('');
         }
 
-        function setActivePack(id, lang) {
-            activePackId = id;
-            currentLang = lang;
-            updateStatsUI();
-        }
-
-        async function fetchLeaderboard(search = "") {
-            const list = document.getElementById('leaderboard-list');
-            let query = sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(20);
-            if (search) query = query.ilike('username', `%${search}%`);
-            const { data } = await query;
-            list.innerHTML = data?.map((u, i) => `
-                <div class="flex items-center justify-between bg-[#111] p-3 rounded-xl border border-gray-800">
-                    <p class="text-xs font-bold">${i+1}. ${u.username || 'Anon'}</p>
-                    <p class="text-[9px] font-black text-pink-600 uppercase">${u.total_roasts} Roasts</p>
-                </div>
-            `).join('') || '';
-        }
-
-        function generateShareCard() {
-            const canvas = document.getElementById('shareCanvas');
-            const ctx = canvas.getContext('2d');
-            const text = document.getElementById('message').innerText.toUpperCase();
-            
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, 1080, 1080);
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.font = '900 80px Inter';
-            
-            // Wrap text logic
-            const words = text.split(' ');
-            let line = '', y = 450;
-            words.forEach(word => {
-                if ((line + word).length > 15) {
-                    ctx.fillText(line, 540, y);
-                    line = word + ' ';
-                    y += 100;
-                } else { line += word + ' '; }
-            });
-            ctx.fillText(line, 540, y);
-            
-            ctx.fillStyle = '#db2777';
-            ctx.font = '900 40px Inter';
-            ctx.fillText('KUTAPP', 540, 950);
-
-            const imgData = canvas.toDataURL("image/png");
-            const link = document.createElement('a');
-            link.download = 'kutapp-reality.png';
-            link.href = imgData;
-            link.click();
-        }
-
-        // --- Auth & Storage ---
-        async function handleAuth() {
-            const email = prompt("Email:");
-            if (!email) return;
-            const { error } = await sb.auth.signInWithOtp({ email });
-            alert(error ? error.message : "Check email!");
+        function shuffleAvatar() {
+            currentAvatar = Math.random().toString(36).substring(7);
+            const url = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentAvatar}`;
+            document.getElementById('profile-img-modal').src = url;
+            document.getElementById('sidebar-avatar').src = url;
         }
 
         async function updateProfile() {
             const name = document.getElementById('username-input').value;
-            const { error } = await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
-            if (!error) { document.getElementById('username-display').innerText = name; alert("Saved!"); }
+            await sb.from('profiles').update({ username: name, avatar_url: currentAvatar }).eq('id', currentUser.id);
+            document.getElementById('username-display').innerText = name;
+            alert("Profile Updated!");
         }
 
-        async function saveToDB() {
-            if (!currentUser) return;
-            await sb.from('profiles').update({ 
-                aura_balance: aura, 
-                total_roasts: totalRoasts, 
-                total_toasts: totalToasts 
-            }).eq('id', currentUser.id);
+        async function fetchLeaderboard() {
+            const { data } = await sb.from('profiles').select('username, total_roasts').order('total_roasts', { ascending: false }).limit(10);
+            document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
+                <div class="flex items-center justify-between bg-[#111] p-3 rounded-xl border border-gray-800">
+                    <p class="text-xs font-bold text-white">${i+1}. ${u.username || 'Anon'}</p>
+                    <p class="text-[9px] font-black text-pink-600 uppercase">${u.total_roasts} Roasts</p>
+                </div>
+            `).join('');
         }
+
+        // --- Improved Natural Voice Picker ---
+        document.getElementById('speakBtn').onclick = () => {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
+            u.lang = currentLang;
+            
+            const voices = window.speechSynthesis.getVoices();
+            // Search for high quality natural voices
+            const premium = voices.find(v => v.lang.startsWith(currentLang) && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium')));
+            if (premium) u.voice = premium;
+
+            u.rate = 0.95; // Slightly slower feels more human
+            u.pitch = 1.0;
+            window.speechSynthesis.speak(u);
+        };
 
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
-            
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (profile) {
                 aura = profile.aura_balance || 20;
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
+                currentAvatar = profile.avatar_url || 'Lucky';
                 document.getElementById('username-display').innerText = profile.username || "Guest";
-            } else {
-                await sb.from('profiles').insert([{ id: currentUser.id, aura_balance: 20 }]);
+                document.getElementById('username-input').value = profile.username || "";
             }
-
-            if (session) {
-                document.getElementById('auth-btn').innerText = "Sign Out";
-                document.getElementById('auth-btn').onclick = () => { sb.auth.signOut(); location.reload(); };
-            }
-
+            const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentAvatar}`;
+            document.getElementById('profile-img-modal').src = avatarUrl;
+            document.getElementById('sidebar-avatar').src = avatarUrl;
             updateStatsUI();
         }
 
-        // Passive Recovery
-        setInterval(() => { if(aura < auraLimit){ aura = Math.min(auraLimit, aura + 1); updateStatsUI(); saveToDB(); }}, 300000);
-
-        document.getElementById('actionBtn').onclick = triggerAction;
-        document.getElementById('shareBtn').onclick = generateShareCard;
-        document.getElementById('speakBtn').onclick = () => {
-            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            u.lang = currentLang;
-            window.speechSynthesis.speak(u);
-        };
+        async function saveToDB() {
+            if (!currentUser) return;
+            await sb.from('profiles').update({ aura_balance: aura, total_roasts: totalRoasts, total_toasts: totalToasts }).eq('id', currentUser.id);
+        }
 
         window.openModal = (id) => { document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('overlay').classList.add('hidden'); document.getElementById('sidebar').classList.remove('open'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.add('open'); document.getElementById('overlay').classList.remove('hidden'); };
-
+        
+        document.getElementById('actionBtn').onclick = triggerAction;
+        document.getElementById('shareBtn').onclick = () => { /* Card logic from before */ };
+        
+        window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices(); // Cache voices
         init();
     </script>
 </body>
