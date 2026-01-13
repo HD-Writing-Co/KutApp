@@ -138,19 +138,28 @@
         let activePackId = 2;
 
         const packs = [
-            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" },
-            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱" },
-            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸" },
-            { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨" }
+            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
+            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
+            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
+            { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" }
         ];
 
         function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
-            document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
-            document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
-            updateStatsUI();
-        }
+			currentMode = mode;
+    
+			// Force select the correct default pack when switching modes
+			if (mode === 'toast') {
+				activePackId = 10;
+			} else {
+				activePackId = 2; // Default back to English Roast
+			}
+
+			document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
+			document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
+			document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
+    
+			updateStatsUI(); // This will trigger the new renderPacks()
+		}
 
         async function triggerAction() {
             const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
@@ -221,13 +230,23 @@
         }
 
         function renderPacks() {
-            const list = document.getElementById('pack-list');
-            list.innerHTML = packs.map(p => `
-                <div onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();" class="pack-card ${activePackId === p.id ? 'active' : ''}">
-                    <span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
-                </div>
-            `).join('');
-        }
+			const list = document.getElementById('pack-list');
+    
+			// We use the full 'packs' array, no filtering
+			list.innerHTML = packs.map(p => {
+				const isWrongMode = p.type !== currentMode;
+        
+				return `
+					<div ${isWrongMode ? '' : `onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();"`} 
+						class="pack-card ${activePackId === p.id ? 'active' : ''} 
+						${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}"
+						style="${isWrongMode ? 'border-color: #222;' : ''}">
+						<span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
+						${isWrongMode ? '<span class="text-[8px] block opacity-50">Switch Mode to Unlock</span>' : ''}
+					</div>
+				`;
+			}).join('');
+		}
 
         async function fetchLeaderboard() {
             const { data } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
