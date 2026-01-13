@@ -322,9 +322,9 @@
 		function renderPacks() {
 			const list = document.getElementById('pack-list');
 			list.innerHTML = packs.map(p => {
-				const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
 				const isWrongMode = p.type !== currentMode;
-        
+				const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
+
 				return `
 					<div onclick="${isLocked ? "openModal('shop-modal')" : isWrongMode ? "" : `selectPack(${p.id}, '${p.lang}')`}" 
 						class="pack-card ${activePackId === p.id ? 'active' : ''} 
@@ -332,7 +332,8 @@
 						<span class="text-[10px] font-black uppercase">
 							${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}
 						</span>
-					</div>`;
+					</div>
+				`;
 			}).join('');
 		}
 
@@ -480,12 +481,24 @@
             document.getElementById('overlay').classList.toggle('hidden'); 
         };
 
-        document.getElementById('speakBtn').onclick = () => {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            u.lang = currentLang;
-            window.speechSynthesis.speak(u);
-        };
+        // 4. Updated High-Quality Voice logic
+		document.getElementById('speakBtn').onclick = () => {
+			window.speechSynthesis.cancel();
+			const text = document.getElementById('message').innerText;
+			const msg = new SpeechSynthesisUtterance(text);
+			msg.lang = currentLang;
+
+        // Prioritize Neural/Premium voices
+        const voices = window.speechSynthesis.getVoices();
+        const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]) && 
+            (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))) 
+            || voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
+        
+        if (bestVoice) msg.voice = bestVoice;
+        msg.pitch = 0.95; 
+        msg.rate = 0.9; 
+        window.speechSynthesis.speak(msg);
+    };
         
         document.getElementById('actionBtn').onclick = triggerAction;
         init();
