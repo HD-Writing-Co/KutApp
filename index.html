@@ -424,6 +424,7 @@
                 auraSoftLimit = profile.aura_soft_limit ?? 20;
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
+                // Load the list from DB, or default to empty array
                 unlockedPacks = profile.unlocked_packs || [];
                 
                 document.getElementById('username-display').innerText = profile.username || "Guest";
@@ -434,25 +435,22 @@
             if (urlParams.get('session') === 'success') {
                 const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
+                
+                // --- BACKUP LOGIC: Check LocalStorage if URL params are missing ---
                 const pending = localStorage.getItem('pending_unlock');
                 const finalAmt = amt || (pending ? parseInt(pending) : null);
                 
-                // Process Pack Unlock
                 if (type === 'unlock' || pending) {
                     if (finalAmt && !unlockedPacks.includes(finalAmt)) {
                         unlockedPacks.push(finalAmt);
                         const packName = packs.find(p => p.id === finalAmt)?.name || "New Pack";
                         alert(`🔓 ${packName} Unlocked!`);
                     }
-                    localStorage.removeItem('pending_unlock');
-                } 
-                // Process Aura Limit Extension
-                else if (type === 'extension') {
+                    localStorage.removeItem('pending_unlock'); // Clear the backup
+                } else if (type === 'extension') {
                     auraSoftLimit = amt || 50; 
-                    alert(`🚀 Upgrade Successful! New limit: ${auraSoftLimit}`);
-                } 
-                // Process Standard Aura Refill
-                else {
+                    alert(`🚀 Upgrade Successful! Limit is now ${auraSoftLimit}`);
+                } else {
                     if (!isNaN(amt)) {
                         aura += amt;
                         alert(`🔥 Added ${amt} Aura to your stash!`);
@@ -460,17 +458,20 @@
                 }
 
                 await saveToDB();
-                renderPacks(); // Refresh the sidebar UI immediately
+                renderPacks(); // Refresh sidebar to remove the lock icon
                 window.history.replaceState({}, document.title, window.location.pathname);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
 
             updateStatsUI();
+            renderPacks(); // Initial render to show existing unlocks
 
+            // Realtime listener for leaderboard
             sb.channel('leaderboard-live').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
                 () => fetchLeaderboard()
             ).subscribe();
 
+            // Auto-refill logic
             setInterval(async () => {
                 if (aura < auraSoftLimit) {
                     aura++;
@@ -482,13 +483,15 @@
 
         async function saveToDB() {
             if (!currentUser) return;
-            await sb.from('profiles').update({ 
+            const { error } = await sb.from('profiles').update({ 
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
                 total_roasts: totalRoasts, 
-                total_toasts: totalToasts, // Added missing comma here
-                unlocked_packs: unlockedPacks
+                total_toasts: totalToasts,
+                unlocked_packs: unlockedPacks // This MUST match the DB column name
             }).eq('id', currentUser.id);
+
+            if(error) console.error("Database Save Error:", error.message);
         }
 
         window.openModal = (id) => { 
