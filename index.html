@@ -196,13 +196,35 @@
         let currentMode = 'roast';
         let currentLang = 'en-US';
         let activePackId = 2;
+		let unlockedPacks = []; // New state to track purchased packs
 
+        // 1. Updated Packs array with Kink Roulette
         const packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
             { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
-            { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" }
+            { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" },
+            { id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast", nsfw: true }
         ];
+
+        // 2. NEW selectPack function
+        function selectPack(id, lang) {
+            const pack = packs.find(p => p.id === id);
+            
+            // Age Gate for NSFW packs
+            if (pack.nsfw && !localStorage.getItem('age_verified')) {
+                const confirmed = confirm("🔞 NSFW CONTENT: This pack is intended for adults. It contains spicy, directional bedroom prompts. Are you 18 or older?");
+                if (confirmed) {
+                    localStorage.setItem('age_verified', 'true');
+                } else {
+                    return; // Stop if they say no
+                }
+            }
+            
+            activePackId = id;
+            currentLang = lang;
+            updateStatsUI();
+        }
 
         function setMode(mode) {
 			currentMode = mode;
