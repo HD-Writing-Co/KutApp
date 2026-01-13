@@ -213,181 +213,100 @@
     <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45] backdrop-blur-sm"></div>
 
     <script>
-        const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null;
-        let aura = 20;
-        let auraSoftLimit = 20; 
-        let totalRoasts = 0;
-        let totalToasts = 0;
-        let currentMode = 'roast';
-        let currentLang = 'en-US';
-        let activePackId = 2;
-        let unlockedPacks = [];
+    let currentUser = null;
+    let aura = 20;
+    let auraSoftLimit = 20; 
+    let totalRoasts = 0;
+    let totalToasts = 0;
+    let currentMode = 'roast';
+    let currentLang = 'en-US';
+    let activePackId = 2;
+    let unlockedPacks = [];
 
-        const packs = [
-            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
-            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
-            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
-            { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" },
-            { id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast", nsfw: true }
-        ];
+    const packs = [
+        { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
+        { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
+        { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
+        { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" },
+        { id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast", nsfw: true }
+    ];
 
-        async function init() {
-            const { data: { session } } = await sb.auth.getSession();
-            
-            if (session && session.user) {
-                currentUser = session.user;
-                document.getElementById('auth-status').innerText = `Logged In: ${currentUser.email}`;
-                document.getElementById('logged-out-view').classList.add('hidden');
-                document.getElementById('logged-in-view').classList.remove('hidden');
-            } else {
-                currentUser = (await sb.auth.signInAnonymously()).data.user;
-                document.getElementById('auth-status').innerText = "Guest Mode (Sync disabled)";
-            }
-
-            // 1. Fetch Profile
-            const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-
-            if (profile) {
-                aura = profile.aura_balance ?? 20;
-                auraSoftLimit = profile.aura_soft_limit ?? 20;
-                totalRoasts = profile.total_roasts || 0;
-                totalToasts = profile.total_toasts || 0;
-                unlockedPacks = profile.unlocked_packs || []; 
-                document.getElementById('username-display').innerText = profile.username || "User";
-                if (profile.avatar_url) {
-                    document.getElementById('sidebar-avatar').src = profile.avatar_url;
-                    if(document.getElementById('profile-img-modal')) document.getElementById('profile-img-modal').src = profile.avatar_url;
-                }
-            }
-
-            // 2. Process Stripe Success IMMEDIATELY after loading profile
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('session') === 'success') {
-                const amt = parseInt(urlParams.get('amt'));
-                const type = urlParams.get('type');
-                
-                if (type === 'unlock' || amt === 69) {
-                    if (!unlockedPacks.includes(69)) {
-                        unlockedPacks.push(69);
-                        console.log("Adding Pack 69 to local array...");
-                    }
-                } else if (type === 'extension') {
-                    auraSoftLimit = amt;
-                } else if (type === 'pack') {
-                    aura += amt;
-                }
-
-                // Force an immediate save to DB so it persists on refresh
-                await saveToDB();
-                window.history.replaceState({}, document.title, window.location.pathname);
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            }
-
-            updateStatsUI();
-            renderPacks();
-
-            // Background Refill
-            setInterval(async () => {
-                if (aura < auraSoftLimit) {
-                    aura++;
-                    await saveToDB();
-                    updateStatsUI();
-                }
-            }, 300000);
+    async function init() {
+        const { data: { session } } = await sb.auth.getSession();
+        if (session) {
+            currentUser = session.user;
+            document.getElementById('logged-out-view').classList.add('hidden');
+            document.getElementById('logged-in-view').classList.remove('hidden');
+        } else {
+            currentUser = (await sb.auth.signInAnonymously()).data.user;
         }
 
-        async function saveToDB() {
-            if (!currentUser) return;
-            const { error } = await sb.from('profiles').update({ 
-                aura_balance: aura, 
-                aura_soft_limit: auraSoftLimit,
-                total_roasts: totalRoasts, 
-                total_toasts: totalToasts,
-                unlocked_packs: unlockedPacks 
-            }).eq('id', currentUser.id);
-
-            if(error) console.error("Save Error:", error.message);
-            else console.log("Sync Successful. Packs:", unlockedPacks);
+        const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+        if (profile) {
+            aura = profile.aura_balance ?? 20;
+            auraSoftLimit = profile.aura_soft_limit ?? 20;
+            totalRoasts = profile.total_roasts || 0;
+            totalToasts = profile.total_toasts || 0;
+            unlockedPacks = profile.unlocked_packs || [];
+            document.getElementById('username-display').innerText = profile.username || "User";
         }
 
-        function selectPack(id, lang) {
-            const pack = packs.find(p => p.id === id);
-            if (pack.nsfw && !localStorage.getItem('age_verified')) {
-                if (confirm("🔞 NSFW CONTENT: Are you 18 or older?")) localStorage.setItem('age_verified', 'true');
-                else return;
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('session') === 'success') {
+            const amt = parseInt(urlParams.get('amt'));
+            if (amt === 69 && !unlockedPacks.includes(69)) {
+                unlockedPacks.push(69);
+                await saveToDB(); // FORCE SAVE
             }
-            activePackId = id;
-            currentLang = lang;
-            updateStatsUI();
+            window.history.replaceState({}, document.title, window.location.pathname);
         }
 
-        function renderPacks() {
-            const list = document.getElementById('pack-list');
-            list.innerHTML = packs.map(p => {
-                const isWrongMode = p.type !== currentMode;
-                const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
-                return `
-                    <div onclick="${isLocked ? "openModal('shop-modal')" : isWrongMode ? "" : `selectPack(${p.id}, '${p.lang}')`}" 
-                        class="pack-card ${activePackId === p.id ? 'active' : ''} 
-                        ${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}">
-                        <span class="text-[10px] font-black uppercase">
-                            ${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}
-                        </span>
-                    </div>`;
-            }).join('');
-        }
+        updateStatsUI();
+    }
 
-        function updateStatsUI() {
-            document.getElementById('counter').innerText = totalRoasts + totalToasts;
-            const auraDisplay = document.getElementById('aura-text');
-            auraDisplay.innerText = aura >= auraSoftLimit ? Math.floor(aura) : `${aura.toFixed(1)}/${auraSoftLimit}`;
-            const prog = document.getElementById('aura-progress');
-            prog.style.width = `${Math.min(100, (aura / auraSoftLimit) * 100)}%`;
-            renderPacks();
-        }
+    async function saveToDB() {
+        if (!currentUser) return;
+        await sb.from('profiles').update({ 
+            aura_balance: aura, 
+            aura_soft_limit: auraSoftLimit,
+            unlocked_packs: unlockedPacks 
+        }).eq('id', currentUser.id);
+    }
 
-        async function triggerAction() {
-            const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
-            const targetId = (currentMode === 'toast') ? 10 : activePackId;
-            if (currentMode === 'roast') {
-                if (aura < 1) return openModal('shop-modal');
-                aura -= 1; totalRoasts++;
-            } else {
-                aura = Math.min(auraSoftLimit + 500, aura + 0.25); totalToasts++;
-            }
-            const { data } = await sb.from(table).select('*').eq('pack_id', targetId);
-            if (data?.length > 0) {
-                const item = data[Math.floor(Math.random() * data.length)];
-                document.getElementById('message').innerText = item.content;
-                document.getElementById('subtext').innerText = item.translation || '';
-                document.getElementById('action-row').style.opacity = "1";
-            }
-            updateStatsUI();
-            saveToDB();
-        }
+    function renderPacks() {
+        const list = document.getElementById('pack-list');
+        list.innerHTML = packs.map(p => {
+            const isWrongMode = p.type !== currentMode;
+            const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
+            return `
+                <div onclick="${isLocked ? "openModal('shop-modal')" : isWrongMode ? "" : `selectPack(${p.id}, '${p.lang}')`}" 
+                    class="pack-card ${activePackId === p.id ? 'active' : ''} ${isWrongMode ? 'opacity-20' : ''}">
+                    ${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}
+                </div>`;
+        }).join('');
+    }
 
-        // Shared Helpers
-        window.openModal = (id) => { 
-            document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active'));
-            document.getElementById(id)?.classList.add('active'); 
-            document.getElementById('overlay').classList.remove('hidden'); 
-        };
-        window.closeAllModals = () => { 
-            document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); 
-            document.getElementById('overlay').classList.add('hidden'); 
-            document.getElementById('sidebar').classList.remove('open'); 
-        };
-        window.toggleSidebar = () => { 
-            document.getElementById('sidebar').classList.toggle('open'); 
-            document.getElementById('overlay').classList.toggle('hidden'); 
-        };
+    function updateStatsUI() {
+        document.getElementById('aura-text').innerText = Math.floor(aura);
+        renderPacks();
+    }
 
-        document.getElementById('actionBtn').onclick = triggerAction;
-        init();
-    </script>
+    // Modal Helpers - REQUIRED for shop buttons to work
+    window.openModal = (id) => {
+        document.getElementById(id).classList.add('active');
+        document.getElementById('overlay').classList.remove('hidden');
+    };
+    window.closeAllModals = () => {
+        document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active'));
+        document.getElementById('overlay').classList.add('hidden');
+    };
+    window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('open');
+
+    init();
+</script>
 </body>
 </html>
