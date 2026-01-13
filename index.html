@@ -14,8 +14,8 @@
         .sidebar.open { transform: translateX(0); }
         .central-modal { 
             position: fixed; top: 10%; left: 50%; transform: translateX(-50%) scale(0.9);
-            width: 90%; max-width: 400px; background: #0a0a0a; border: 1px solid #222;
-            border-radius: 24px; z-index: 60; display: none; padding: 24px; max-height: 80vh; overflow-y: auto; opacity: 0; transition: all 0.3s ease;
+            width: 95%; max-width: 400px; background: #0a0a0a; border: 1px solid #222;
+            border-radius: 24px; z-index: 60; display: none; padding: 24px; max-height: 85vh; overflow-y: auto; opacity: 0; transition: all 0.2s ease;
         }
         .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
         .vibe-toggle { display: flex; background: #111; padding: 4px; border-radius: 50px; border: 1px solid #222; margin-bottom: 20px; }
@@ -48,7 +48,7 @@
         </div>
         <div id="message-container">
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
-            <p id="subtext" class="text-gray-500 text-sm mb-8 h-6"></p>
+            <p id="subtext" class="text-gray-500 text-sm mb-8 h-6 italic uppercase font-bold tracking-widest"></p>
             <div id="action-row" class="opacity-0 flex gap-3 justify-center">
                 <button onclick="generateShareCard()" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
                 <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
@@ -66,7 +66,7 @@
                 </div>
             </div>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-colors">Get Roasted</button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
     </footer>
 
     <div id="profile-modal" class="central-modal">
@@ -80,44 +80,58 @@
                 </label>
             </div>
             <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
-            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save</button>
+            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save Changes</button>
         </div>
-        <h3 class="text-[10px] font-black uppercase text-gray-500 mb-3">Achievements</h3>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Thick Skin</span><span id="skin-prog">0/1000</span></div><div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden"><div id="skin-fill" class="achievement-fill bg-pink-600" style="width: 0%"></div></div></div>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Zen Master</span><span id="zen-prog">0/500</span></div><div class="w-full h-1 bg-gray-800 rounded-full overflow-hidden"><div id="zen-fill" class="achievement-fill bg-yellow-500" style="width: 0%"></div></div></div>
-    </div>
-
-    <div id="leaderboard-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div id="leaderboard-list" class="flex flex-col gap-2"></div>
+        <h3 class="text-[10px] font-black uppercase text-gray-500 mb-3 tracking-widest">Achievements</h3>
+        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Thick Skin (Roasts)</span><span id="skin-prog">0/1000</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="skin-fill" class="achievement-fill bg-pink-600" style="width: 0%"></div></div></div>
+        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Zen Master (Toasts)</span><span id="zen-prog">0/500</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="zen-fill" class="achievement-fill bg-yellow-500" style="width: 0%"></div></div></div>
     </div>
 
     <div id="shop-modal" class="central-modal">
         <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <button class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center mb-3">
-            <p class="text-xs font-black uppercase text-yellow-500">Refill Aura</p>
+        <div class="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl mb-4 text-center">
+            <p class="text-[10px] font-black uppercase text-yellow-500">Current Aura</p>
+            <p id="shop-aura-display" class="text-2xl font-black text-white">20.0</p>
+        </div>
+        <button onclick="alert('Refilling... (Simulation)')" class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-yellow-500/5 transition-all">
+            <p class="text-xs font-black uppercase text-yellow-500">Refill Aura Now</p>
             <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$0.99</span>
         </button>
     </div>
 
+    <div id="leaderboard-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div id="leaderboard-list" class="flex flex-col gap-2">
+            </div>
+    </div>
+
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
-        <div class="flex items-center gap-3 mb-8 cursor-pointer" onclick="openModal('profile-modal')">
+        <div class="flex items-center gap-3 mb-8 cursor-pointer group" onclick="openModal('profile-modal')">
             <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
-            <div class="text-left"><p id="username-display" class="font-bold text-sm text-white">Guest</p></div>
+            <div class="text-left"><p id="username-display" class="font-bold text-sm text-white group-hover:text-pink-600 transition-colors">Guest</p><p class="text-[8px] uppercase text-gray-500 font-black">View Profile</p></div>
         </div>
-        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4">Packs</h3>
-        <div id="pack-list" class="flex flex-col gap-2"></div>
+        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
+        <div id="pack-list" class="flex flex-col gap-2">
+            </div>
     </aside>
 
-    <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45]"></div>
+    <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45] backdrop-blur-sm"></div>
 
     <script>
+        // REPLACE WITH YOUR ACTUAL PROJECT URL AND KEY
         const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser = null, aura = 20, auraLimit = 20, totalRoasts = 0, totalToasts = 0, currentMode = 'roast', currentLang = 'en-US', activePackId = 2;
+        let currentUser = null;
+        let aura = 20;
+        let auraLimit = 20;
+        let totalRoasts = 0;
+        let totalToasts = 0;
+        let currentMode = 'roast';
+        let currentLang = 'en-US';
+        let activePackId = 2;
 
         const packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸" },
@@ -134,12 +148,6 @@
             updateStatsUI();
         }
 
-        function setActivePack(id, lang) {
-            activePackId = id;
-            currentLang = lang;
-            updateStatsUI();
-        }
-
         async function triggerAction() {
             const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
             const targetId = (currentMode === 'toast') ? 10 : activePackId;
@@ -150,31 +158,40 @@
             } else {
                 if (aura >= auraLimit) return alert("Aura Full!");
                 aura = Math.min(auraLimit, aura + 0.25); totalToasts++;
-                confetti({ particleCount: 20, colors: ['#fbbf24', '#ffffff'] });
+                confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff'] });
             }
 
-            // Enhanced fetch to handle different column names if necessary
             const { data, error } = await sb.from(table).select('*').eq('pack_id', targetId);
-
+            
             if (data && data.length > 0) {
                 const item = data[Math.floor(Math.random() * data.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = item.translation || '';
                 document.getElementById('action-row').style.opacity = "1";
             } else {
+                console.error("No data found for table:", table, "Pack ID:", targetId);
                 document.getElementById('message').innerText = "CONTENT MISSING";
-                console.log("No data for pack", targetId, "in table", table);
             }
 
             updateStatsUI();
             saveToDB();
         }
 
+        async function updateProfile() {
+            const name = document.getElementById('username-input').value;
+            if (!currentUser) return;
+            const { error } = await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
+            if (!error) {
+                document.getElementById('username-display').innerText = name;
+                alert("Profile Saved!");
+            }
+        }
+
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0] || !currentUser) return;
             const file = input.files[0];
-            const path = `avatars/${currentUser.id}-${Date.now()}.png`;
-            const { data, error } = await sb.storage.from('avatars').upload(path, file);
+            const path = `avatars/${currentUser.id}.png`;
+            const { error } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
             if (!error) {
                 const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
                 await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
@@ -183,18 +200,11 @@
             }
         }
 
-        async function updateProfile() {
-            const name = document.getElementById('username-input').value;
-            if (currentUser) {
-                await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
-                document.getElementById('username-display').innerText = name;
-                alert("Profile Updated!");
-            }
-        }
-
         function updateStatsUI() {
             document.getElementById('counter').innerText = totalRoasts + totalToasts;
             document.getElementById('aura-text').innerText = `${aura.toFixed(1)}/${auraLimit}`;
+            document.getElementById('shop-aura-display').innerText = aura.toFixed(1);
+            
             const prog = document.getElementById('aura-progress');
             prog.style.width = `${(aura/auraLimit)*100}%`;
             prog.style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
@@ -209,7 +219,7 @@
         function renderPacks() {
             const list = document.getElementById('pack-list');
             list.innerHTML = packs.map(p => `
-                <div onclick="setActivePack(${p.id}, '${p.lang}')" class="pack-card ${activePackId === p.id ? 'active' : ''}">
+                <div onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();" class="pack-card ${activePackId === p.id ? 'active' : ''}">
                     <span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
                 </div>
             `).join('');
@@ -219,9 +229,9 @@
             const { data } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
             if (data) {
                 document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
-                    <div class="flex justify-between bg-[#111] p-3 rounded-xl border border-gray-800 text-xs font-bold">
-                        <span>${i+1}. ${u.username || 'Anon'}</span>
-                        <span class="text-pink-600">${(u.total_roasts || 0) + (u.total_toasts || 0)}</span>
+                    <div class="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-gray-800">
+                        <span class="text-xs font-bold text-gray-400">#${i+1} <span class="text-white ml-2">${u.username || 'Anon'}</span></span>
+                        <span class="text-[10px] font-black bg-pink-600/20 text-pink-600 px-2 py-0.5 rounded-full">${(u.total_roasts || 0) + (u.total_toasts || 0)}</span>
                     </div>
                 `).join('');
             }
@@ -230,18 +240,17 @@
         function generateShareCard() {
             const canvas = document.getElementById('shareCanvas');
             const ctx = canvas.getContext('2d');
-            const msg = document.getElementById('message').innerText;
             ctx.fillStyle = '#050505';
             ctx.fillRect(0, 0, 1080, 1080);
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
-            ctx.font = '900 70px Inter';
+            ctx.font = '900 80px Inter';
+            const msg = document.getElementById('message').innerText;
             const words = msg.split(' ');
             let line = '', y = 450;
             words.forEach(word => {
-                if ((line + word).length > 15) {
-                    ctx.fillText(line.toUpperCase(), 540, y);
-                    line = word + ' '; y += 100;
+                if ((line + word).length > 15) { 
+                    ctx.fillText(line.toUpperCase(), 540, y); line = word + ' '; y += 110; 
                 } else { line += word + ' '; }
             });
             ctx.fillText(line.toUpperCase(), 540, y);
@@ -249,44 +258,46 @@
             ctx.font = 'italic 900 60px Inter';
             ctx.fillText('KUTAPP', 540, 1000);
             const link = document.createElement('a');
-            link.download = 'KutApp-RealityCheck.png';
+            link.download = `KutApp_${currentMode}.png`;
             link.href = canvas.toDataURL();
             link.click();
         }
-
-        document.getElementById('speakBtn').onclick = () => {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            u.lang = currentLang;
-            window.speechSynthesis.speak(u);
-        };
 
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
             if (profile) {
-                aura = profile.aura_balance || 20;
+                aura = profile.aura_balance ?? 20;
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
                 document.getElementById('username-display').innerText = profile.username || "Guest";
                 document.getElementById('username-input').value = profile.username || "";
-                const avatar = profile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`;
-                document.getElementById('profile-img-modal').src = avatar;
-                document.getElementById('sidebar-avatar').src = avatar;
+                if (profile.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = profile.avatar_url;
+                    document.getElementById('profile-img-modal').src = profile.avatar_url;
+                }
             }
             updateStatsUI();
         }
 
         async function saveToDB() {
             if (!currentUser) return;
-            await sb.from('profiles').update({ aura_balance: aura, total_roasts: totalRoasts, total_toasts: totalToasts }).eq('id', currentUser.id);
+            await sb.from('profiles').update({ 
+                aura_balance: aura, 
+                total_roasts: totalRoasts, 
+                total_toasts: totalToasts 
+            }).eq('id', currentUser.id);
         }
 
+        // Global Modal Controls
         window.openModal = (id) => { 
             closeAllModals(); 
-            document.getElementById(id).classList.add('active'); 
-            document.getElementById('overlay').classList.remove('hidden'); 
+            const m = document.getElementById(id);
+            if(m) {
+                m.classList.add('active'); 
+                document.getElementById('overlay').classList.remove('hidden'); 
+            }
         };
         window.closeAllModals = () => { 
             document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); 
@@ -294,9 +305,18 @@
             document.getElementById('sidebar').classList.remove('open'); 
         };
         window.toggleSidebar = () => { 
-            document.getElementById('sidebar').classList.add('open'); 
-            document.getElementById('overlay').classList.remove('hidden'); 
+            document.getElementById('sidebar').classList.toggle('open'); 
+            document.getElementById('overlay').classList.toggle('hidden'); 
         };
+
+        // Audio
+        document.getElementById('speakBtn').onclick = () => {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
+            u.lang = currentLang;
+            window.speechSynthesis.speak(u);
+        };
+        
         document.getElementById('actionBtn').onclick = triggerAction;
         init();
     </script>
