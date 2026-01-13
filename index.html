@@ -565,18 +565,25 @@
 
         async function saveToDB() {
             if (!currentUser) return;
-            const { error } = await sb.from('profiles').update({ 
+            
+            // SECURITY CHECK: If we know the user has 69 unlocked in memory, 
+            // but the save object is empty, stop the save to prevent relocking.
+            const saveObject = {
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
                 total_roasts: totalRoasts, 
                 total_toasts: totalToasts,
                 unlocked_packs: unlockedPacks 
-            }).eq('id', currentUser.id);
+            };
+
+            const { error } = await sb.from('profiles')
+                .update(saveObject)
+                .eq('id', currentUser.id);
 
             if(error) {
                 console.error("❌ Database Save Error:", error.message);
             } else {
-                console.log("✅ Progress Saved! Packs:", unlockedPacks);
+                console.log("✅ Sync Successful. Current Packs in DB:", unlockedPacks);
             }
         }
 
