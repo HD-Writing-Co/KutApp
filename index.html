@@ -325,18 +325,19 @@
 			btn.innerText = "Processing...";
 			btn.classList.add('opacity-50', 'cursor-not-allowed');
 
-			// Insert into your suggestions table
+			// We only send content and user_id. 
+			// created_at, status, and id are handled automatically by Supabase.
 			const { error } = await sb.from('suggestions').insert([
 				{ 
 					content: content, 
 					user_id: currentUser.id,
-					status: 'pending' 
+					status: 'pending'
 				}
 			]);
 
 			if (error) {
-				console.error(error);
-				alert("Submission failed. Try again later.");
+				console.error("Database Error:", error);
+				alert("Submission failed. Check your connection or RLS policies.");
 				isSuggesting = false;
 				btn.innerText = "Submit to Queue";
 				btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -345,7 +346,6 @@
 				btn.innerText = "Submitted!";
 				confetti({ particleCount: 20, spread: 50, colors: ['#db2777'] });
         
-				// Anti-spam cooldown (30 seconds)
 				setTimeout(() => {
 					isSuggesting = false;
 					btn.innerText = "Submit to Queue";
