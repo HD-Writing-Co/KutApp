@@ -494,7 +494,7 @@
                 document.getElementById('auth-status').innerText = "Guest Mode (Sync disabled)";
             }
 
-            // 2. Fetch Profile - Using maybeSingle() to prevent the 406 crash
+            // 2. Fetch Profile
             const { data: profile, error: profileError } = await sb
                 .from('profiles')
                 .select('*')
@@ -520,27 +520,14 @@
                     if(modalImg) modalImg.src = profile.avatar_url;
                 }
             } else if (session) {
-                // If logged in but no profile exists, create one immediately
-                await saveToDB();
+                await saveToDB(); // Create initial profile if logged in but empty
             }
-    
-			// Update UI
-			document.getElementById('username-display').innerText = profile.username || "User";
-    
-			// Fix: Load Avatar from DB on refresh
-			if (profile.avatar_url) {
-				document.getElementById('sidebar-avatar').src = profile.avatar_url;
-				const modalImg = document.getElementById('profile-img-modal');
-				if(modalImg) modalImg.src = profile.avatar_url;
-			}
-		}
 
+            // 3. Process URL Params (Stripe Success)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
                 const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
-                
-                // --- BACKUP LOGIC: Check LocalStorage if URL params are missing ---
                 const pending = localStorage.getItem('pending_unlock');
                 const finalAmt = amt || (pending ? parseInt(pending) : null);
                 
@@ -550,32 +537,26 @@
                         const packName = packs.find(p => p.id === finalAmt)?.name || "New Pack";
                         alert(`🔓 ${packName} Unlocked!`);
                     }
-                    localStorage.removeItem('pending_unlock'); // Clear the backup
+                    localStorage.removeItem('pending_unlock');
                 } else if (type === 'extension') {
                     auraSoftLimit = amt || 50; 
-                    alert(`🚀 Upgrade Successful! Limit is now ${auraSoftLimit}`);
-                } else {
-                    if (!isNaN(amt)) {
-                        aura += amt;
-                        alert(`🔥 Added ${amt} Aura to your stash!`);
-                    }
+                } else if (!isNaN(amt)) {
+                    aura += amt;
                 }
 
                 await saveToDB();
-                renderPacks(); // Refresh sidebar to remove the lock icon
                 window.history.replaceState({}, document.title, window.location.pathname);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
 
+            // 4. Update UI and Listeners
             updateStatsUI();
-            renderPacks(); // Initial render to show existing unlocks
+            renderPacks();
 
-            // Realtime listener for leaderboard
             sb.channel('leaderboard-live').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
                 () => fetchLeaderboard()
             ).subscribe();
 
-            // Auto-refill logic
             setInterval(async () => {
                 if (aura < auraSoftLimit) {
                     aura++;
