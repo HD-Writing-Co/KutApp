@@ -108,6 +108,26 @@
         <div id="leaderboard-list" class="flex flex-col gap-2">
             </div>
     </div>
+	
+	<div id="suggest-modal" class="central-modal">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-xl font-black uppercase italic text-pink-600 flex items-center gap-2">
+            Suggest <span class="text-[10px] bg-pink-600/20 px-2 py-0.5 rounded-full not-italic">LIVE</span>
+        </h2>
+        <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
+    </div>
+    <p class="text-[10px] text-gray-500 uppercase font-black mb-4 tracking-tighter">Help us roast the world. Every submission is reviewed.</p>
+    
+    <textarea id="suggest-input" 
+        class="w-full bg-black border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-pink-600 outline-none mb-4 transition-colors" 
+        rows="4" 
+        placeholder="Type your spicy roast or toast here..."></textarea>
+    
+    <button id="submit-suggest-btn" onclick="submitSuggestion()" 
+        class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest active:scale-95 transition-all">
+        Submit to Queue
+    </button>
+	</div>
 
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
@@ -118,6 +138,10 @@
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
         <div id="pack-list" class="flex flex-col gap-2">
             </div>
+			<button onclick="openModal('suggest-modal')" 
+    class="w-full bg-pink-600/10 border border-pink-600/20 p-4 rounded-xl text-[10px] font-black uppercase mb-6 text-pink-500 hover:bg-pink-600/20 transition-all flex justify-between items-center">
+    💡 Suggest a Phrase <span>→</span>
+</button>
     </aside>
 
     <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45] backdrop-blur-sm"></div>
@@ -285,6 +309,51 @@
             link.href = canvas.toDataURL();
             link.click();
         }
+		
+		let isSuggesting = false;
+
+		async function submitSuggestion() {
+			const input = document.getElementById('suggest-input');
+			const content = input.value.trim();
+			const btn = document.getElementById('submit-suggest-btn');
+
+			if (!content) return alert("Write something first!");
+			if (content.length < 5) return alert("Make it a bit longer!");
+			if (isSuggesting) return; 
+
+			isSuggesting = true;
+			btn.innerText = "Processing...";
+			btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+			// Insert into your suggestions table
+			const { error } = await sb.from('suggestions').insert([
+				{ 
+					content: content, 
+					user_id: currentUser.id,
+					status: 'pending' 
+				}
+			]);
+
+			if (error) {
+				console.error(error);
+				alert("Submission failed. Try again later.");
+				isSuggesting = false;
+				btn.innerText = "Submit to Queue";
+				btn.classList.remove('opacity-50', 'cursor-not-allowed');
+			} else {
+				input.value = "";
+				btn.innerText = "Submitted!";
+				confetti({ particleCount: 20, spread: 50, colors: ['#db2777'] });
+        
+				// Anti-spam cooldown (30 seconds)
+				setTimeout(() => {
+					isSuggesting = false;
+					btn.innerText = "Submit to Queue";
+					btn.classList.remove('opacity-50', 'cursor-not-allowed');
+					closeAllModals();
+				}, 30000); 
+			}
+		}
 
         async function init() {
 			const { data: { session } } = await sb.auth.getSession();
