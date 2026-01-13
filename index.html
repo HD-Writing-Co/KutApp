@@ -404,9 +404,13 @@
 			}
 		}
 		
-		function buyAura(type, value, stripeLink) {
 			// This appends ?type=unlock&amt=69 to the Stripe URL
 			// Stripe will then carry these parameters over to the "Success URL" redirect
+			
+		function buyAura(type, value, stripeLink) {
+			if (type === 'unlock') {
+				localStorage.setItem('pending_unlock', value);
+			}
 			window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
 		}
 
@@ -420,6 +424,8 @@
                 auraSoftLimit = profile.aura_soft_limit ?? 20;
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
+                unlockedPacks = profile.unlocked_packs || [];
+                
                 document.getElementById('username-display').innerText = profile.username || "Guest";
                 document.getElementById('username-input').value = profile.username || "";
             }
@@ -428,20 +434,25 @@
             if (urlParams.get('session') === 'success') {
                 const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
+                const pending = localStorage.getItem('pending_unlock');
+                const finalAmt = amt || (pending ? parseInt(pending) : null);
                 
-                if (type === 'unlock') {
-                    // Handle Pack Unlock
-                    if (!unlockedPacks.includes(amt)) {
-                        unlockedPacks.push(amt);
-                        const packName = packs.find(p => p.id === amt)?.name || "New Pack";
+                // Process Pack Unlock
+                if (type === 'unlock' || pending) {
+                    if (finalAmt && !unlockedPacks.includes(finalAmt)) {
+                        unlockedPacks.push(finalAmt);
+                        const packName = packs.find(p => p.id === finalAmt)?.name || "New Pack";
                         alert(`🔓 ${packName} Unlocked!`);
                     }
-                } else if (type === 'extension') {
-                    // Handle Aura Limit Extension
-                    auraSoftLimit = amt; 
-                    alert(`🚀 Upgrade Successful! You now refill up to ${amt} Aura.`);
-                } else {
-                    // Handle Standard Aura Refill (Only if not an unlock or extension)
+                    localStorage.removeItem('pending_unlock');
+                } 
+                // Process Aura Limit Extension
+                else if (type === 'extension') {
+                    auraSoftLimit = amt || 50; 
+                    alert(`🚀 Upgrade Successful! New limit: ${auraSoftLimit}`);
+                } 
+                // Process Standard Aura Refill
+                else {
                     if (!isNaN(amt)) {
                         aura += amt;
                         alert(`🔥 Added ${amt} Aura to your stash!`);
@@ -449,7 +460,7 @@
                 }
 
                 await saveToDB();
-				renderPacks();
+                renderPacks(); // Refresh the sidebar UI immediately
                 window.history.replaceState({}, document.title, window.location.pathname);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
@@ -460,7 +471,6 @@
                 () => fetchLeaderboard()
             ).subscribe();
 
-            // Passive Refill: 1 point every 5 mins (300,000ms)
             setInterval(async () => {
                 if (aura < auraSoftLimit) {
                     aura++;
@@ -476,7 +486,8 @@
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
                 total_roasts: totalRoasts, 
-                total_toasts: totalToasts 
+                total_toasts: totalToasts, // Added missing comma here
+                unlocked_packs: unlockedPacks
             }).eq('id', currentUser.id);
         }
 
@@ -498,24 +509,22 @@
             document.getElementById('overlay').classList.toggle('hidden'); 
         };
 
-        // 4. Updated High-Quality Voice logic
 		document.getElementById('speakBtn').onclick = () => {
 			window.speechSynthesis.cancel();
 			const text = document.getElementById('message').innerText;
 			const msg = new SpeechSynthesisUtterance(text);
 			msg.lang = currentLang;
 
-        // Prioritize Neural/Premium voices
-        const voices = window.speechSynthesis.getVoices();
-        const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]) && 
-            (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))) 
-            || voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
-        
-        if (bestVoice) msg.voice = bestVoice;
-        msg.pitch = 0.95; 
-        msg.rate = 0.9; 
-        window.speechSynthesis.speak(msg);
-    };
+            const voices = window.speechSynthesis.getVoices();
+            const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]) && 
+                (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))) 
+                || voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
+            
+            if (bestVoice) msg.voice = bestVoice;
+            msg.pitch = 0.95; 
+            msg.rate = 0.9; 
+            window.speechSynthesis.speak(msg);
+        };
         
         document.getElementById('actionBtn').onclick = triggerAction;
         init();
