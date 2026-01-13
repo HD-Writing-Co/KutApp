@@ -4,20 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KutApp | Emotional Damage</title>
-	<meta name="title" content="KutApp | Emotional Damage">
-	<meta name="description" content="The unfiltered roast and toast app. Get a reality check or an ego boost. Use at your own risk.">
-
-	<meta property="og:type" content="website">
-	<meta property="og:url" content="https://kutapp.fun/">
-	<meta property="og:title" content="KutApp | Emotional Damage">
-	<meta property="og:description" content="Brutally honest roasts and spicy affirmations. Your ego isn't ready.">
-	<meta property="og:image" content="https://kutapp.fun/og-image.png">
-
-	<meta property="twitter:card" content="summary_large_image">
-	<meta property="twitter:url" content="https://kutapp.fun/">
-	<meta property="twitter:title" content="KutApp | Emotional Damage">
-	<meta property="twitter:description" content="Brutally honest roasts and spicy affirmations. Your ego isn't ready.">
-	<meta property="twitter:image" content="https://kutapp.fun/og-image.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -38,22 +24,14 @@
         .vibe-btn.active-toast { background: #fbbf24; color: black; }
         .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; transform: scale(1.02); }
-        .achievement-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
-        .achievement-fill { height: 100%; transition: width 0.5s ease; }
-		
-		#subtext:empty {
-			display: none;
-		}
+        #subtext:empty { display: none; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
 
-    <canvas id="shareCanvas" width="1080" height="1080" style="display:none;"></canvas>
-
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase italic">KUTAPP</div>
         <div class="flex items-center gap-3">
-            <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
             <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
             <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800">☰</button>
         </div>
@@ -67,10 +45,6 @@
         <div id="message-container">
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
             <p id="subtext" class="text-gray-500 text-sm mb-8 h-6 italic uppercase font-bold tracking-widest"></p>
-            <div id="action-row" class="opacity-0 flex gap-3 justify-center">
-                <button onclick="generateShareCard()" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
-                <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
-            </div>
         </div>
     </main>
 
@@ -78,98 +52,54 @@
         <div class="flex justify-between items-end px-2">
             <div><p id="counter" class="text-3xl font-black">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Impacts</p></div>
             <div class="text-right">
-                <p id="aura-text" class="text-xl font-black text-pink-600">20/20</p>
+                <p id="aura-text" class="text-xl font-black text-pink-600">--/--</p>
                 <div class="w-24 h-1.5 bg-gray-900 rounded-full mt-1 overflow-hidden">
-                    <div id="aura-progress" class="bg-pink-600 h-full" style="width: 100%"></div>
+                    <div id="aura-progress" class="bg-pink-600 h-full" style="width: 0%"></div>
                 </div>
             </div>
         </div>
         <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
     </footer>
 
-    <div id="profile-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800 mb-6">
-            <div class="relative group">
-                <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover bg-black">
-                <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                    <span class="text-[10px] font-black uppercase text-white">Upload</span>
-                    <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
-                </label>
-            </div>
-            <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
-            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save Changes</button>
-        </div>
-        <h3 class="text-[10px] font-black uppercase text-gray-500 mb-3 tracking-widest">Achievements</h3>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Thick Skin (Roasts)</span><span id="skin-prog">0/1000</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="skin-fill" class="achievement-fill bg-pink-600" style="width: 0%"></div></div></div>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Zen Master (Toasts)</span><span id="zen-prog">0/500</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="zen-fill" class="achievement-fill bg-yellow-500" style="width: 0%"></div></div></div>
-    </div>
-
     <div id="shop-modal" class="central-modal">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2>
-            <div class="text-[10px] font-bold text-gray-500">Your Aura: <span id="shop-aura-display" class="text-white">20</span></div>
+            <div class="text-[10px] font-bold text-gray-500">Aura: <span id="shop-aura-display" class="text-white">--</span></div>
             <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
         </div>
         
         <div class="space-y-3">
-            <button onclick="buyAura('extension', 50, 'YOUR_STRIPE_LINK_HERE')" class="w-full bg-[#111] border border-blue-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-blue-500/5 transition-all">
-                <div class="text-left">
-                    <p class="text-[10px] font-black uppercase text-blue-500">Permanent Upgrade</p>
-                    <p class="text-sm font-black text-white">REFILL UP TO 50</p>
-                </div>
+            <button onclick="buyAura('extension', 50, 'https://buy.stripe.com/8x2bJ0chU5oa4jr4pTgbm01')" class="w-full bg-[#111] border border-blue-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-blue-500/5 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-blue-500 uppercase">Aura Extension (Sm)</p><p class="text-xs font-black text-white">REFILL LIMIT 50</p></div>
                 <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full">$1.99</span>
             </button>
 
-            <button onclick="buyAura('pack', 100, 'YOUR_STRIPE_LINK_HERE')" class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-yellow-500/5 transition-all">
-                <div class="text-left">
-                    <p class="text-[10px] font-black uppercase text-yellow-500">Instant Stash</p>
-                    <p class="text-sm font-black text-white">+100 AURA</p>
-                </div>
+            <button onclick="buyAura('extension', 100, 'https://buy.stripe.com/14A4gy2Hkg2O4jr7C5gbm02')" class="w-full bg-[#111] border border-purple-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-purple-500/5 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-purple-500 uppercase">Aura Extension (Lg)</p><p class="text-xs font-black text-white">REFILL LIMIT 100</p></div>
+                <span class="text-[10px] font-black bg-purple-600 text-white px-3 py-1 rounded-full">$4.99</span>
+            </button>
+
+            <button onclick="buyAura('pack', 10, 'https://buy.stripe.com/cNi8wObdQg2O6rz3lPgbm03')" class="w-full bg-[#111] border border-gray-700 p-4 rounded-xl flex justify-between items-center hover:bg-white/5 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-gray-400 uppercase">Aura Refill (Sm)</p><p class="text-xs font-black text-white">+10 AURA INSTANT</p></div>
+                <span class="text-[10px] font-black bg-gray-700 text-white px-3 py-1 rounded-full">$0.99</span>
+            </button>
+
+            <button onclick="buyAura('pack', 100, 'https://buy.stripe.com/8x23cu4Ps3g2bLT09Dgbm00')" class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-yellow-500/5 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-yellow-500 uppercase">Aura Refill (Lg)</p><p class="text-xs font-black text-white">+100 AURA INSTANT</p></div>
                 <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$2.99</span>
+            </button>
+
+            <button onclick="buyAura('unlock', 69, 'https://buy.stripe.com/00w6oGfu617UeY5bSlgbm04')" class="w-full bg-[#1a0a10] border border-pink-900/40 p-4 rounded-xl flex justify-between items-center hover:bg-pink-500/10 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-pink-500 uppercase">Special Unlock</p><p class="text-xs font-black text-white">KINK ROULETTE</p></div>
+                <span class="text-[10px] font-black bg-pink-600 text-white px-3 py-1 rounded-full">$1.49</span>
             </button>
         </div>
     </div>
 
-    <div id="leaderboard-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div id="leaderboard-list" class="flex flex-col gap-2">
-            </div>
-    </div>
-	
-	<div id="suggest-modal" class="central-modal">
-    <div class="flex justify-between items-center mb-6">
-        <h2 class="text-xl font-black uppercase italic text-pink-600 flex items-center gap-2">
-            Suggest <span class="text-[10px] bg-pink-600/20 px-2 py-0.5 rounded-full not-italic">LIVE</span>
-        </h2>
-        <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
-    </div>
-    <p class="text-[10px] text-gray-500 uppercase font-black mb-4 tracking-tighter">Help us roast the world. Every submission is reviewed.</p>
-    
-    <textarea id="suggest-input" 
-        class="w-full bg-black border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-pink-600 outline-none mb-4 transition-colors" 
-        rows="4" 
-        placeholder="Type your spicy roast or toast here..."></textarea>
-    
-    <button id="submit-suggest-btn" onclick="submitSuggestion()" 
-        class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest active:scale-95 transition-all">
-        Submit to Queue
-    </button>
-	</div>
-
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
-        <div class="flex items-center gap-3 mb-8 cursor-pointer group" onclick="openModal('profile-modal')">
-            <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
-            <div class="text-left"><p id="username-display" class="font-bold text-sm text-white group-hover:text-pink-600 transition-colors">Guest</p><p class="text-[8px] uppercase text-gray-500 font-black">View Profile</p></div>
-        </div>
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
-        <div id="pack-list" class="flex flex-col gap-2">
-            </div>
-			<button onclick="openModal('suggest-modal')" 
-    class="w-full bg-pink-600/10 border border-pink-600/20 p-4 rounded-xl text-[10px] font-black uppercase mb-6 text-pink-500 hover:bg-pink-600/20 transition-all flex justify-between items-center">
-    💡 Suggest a Phrase <span>→</span>
-</button>
+        <div id="pack-list" class="flex flex-col gap-2"></div>
     </aside>
 
     <div id="overlay" onclick="closeAllModals()" class="fixed inset-0 bg-black/80 hidden z-[45] backdrop-blur-sm"></div>
@@ -181,196 +111,71 @@
 
         let currentUser = null;
         let aura = 20;
-		let auraSoftLimit = 20; 
+        let auraSoftLimit = 20; 
         let totalRoasts = 0;
         let totalToasts = 0;
         let currentMode = 'roast';
         let currentLang = 'en-US';
         let activePackId = 2;
+        let unlockedPacks = [];
 
-        const packs = [
+        let packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
-            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
             { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" }
         ];
 
         function setMode(mode) {
-			currentMode = mode;
-			if (mode === 'toast') {
-				activePackId = 10;
-			} else {
-				activePackId = 2;
-			}
-			document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
-			document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
-			document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
-			updateStatsUI();
-		}
+            currentMode = mode;
+            activePackId = (mode === 'toast') ? 10 : 2;
+            document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
+            document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
+            document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
+            updateStatsUI();
+        }
 
         async function triggerAction() {
             const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
-            const targetId = (currentMode === 'toast') ? 10 : activePackId;
-
             if (currentMode === 'roast') {
                 if (aura < 1) return openModal('shop-modal');
                 aura -= 1; totalRoasts++;
             } else {
                 if (aura >= auraSoftLimit) return alert("Aura Full!");
-                aura = Math.min(auraSoftLimit + 500, aura + 0.25); totalToasts++;
-                confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff'] });
+                aura = Math.min(auraSoftLimit, aura + 0.25); totalToasts++;
             }
 
-            const { data, error } = await sb.from(table).select('*').eq('pack_id', targetId);
-            
+            const { data } = await sb.from(table).select('*').eq('pack_id', activePackId);
             if (data && data.length > 0) {
                 const item = data[Math.floor(Math.random() * data.length)];
                 document.getElementById('message').innerText = item.content;
                 document.getElementById('subtext').innerText = item.translation || '';
-                document.getElementById('action-row').style.opacity = "1";
-            } else {
-                document.getElementById('message').innerText = "CONTENT MISSING";
             }
-
             updateStatsUI();
             saveToDB();
         }
 
-        async function updateProfile() {
-            const name = document.getElementById('username-input').value;
-            if (!currentUser) return;
-            const { error } = await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
-            if (!error) {
-                document.getElementById('username-display').innerText = name;
-                alert("Profile Saved!");
-            }
-        }
-
-        async function uploadAvatar(input) {
-            if (!input.files || !input.files[0] || !currentUser) return;
-            const file = input.files[0];
-            const path = `avatars/${currentUser.id}.png`;
-            const { error } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
-            if (!error) {
-                const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
-                await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
-                document.getElementById('profile-img-modal').src = publicUrl;
-                document.getElementById('sidebar-avatar').src = publicUrl;
-            }
-        }
-
         function updateStatsUI() {
-			document.getElementById('counter').innerText = totalRoasts + totalToasts;
-			const auraDisplay = document.getElementById('aura-text');
-			if (aura >= auraSoftLimit) {
-				auraDisplay.innerText = Math.floor(aura); 
-				auraDisplay.classList.add('text-yellow-500');
-				auraDisplay.classList.remove('text-pink-600');
-			} else {
-				auraDisplay.innerText = `${aura.toFixed(1)}/${auraSoftLimit}`;
-				auraDisplay.classList.remove('text-yellow-500');
-				auraDisplay.classList.add('text-pink-600');
-			}
-			document.getElementById('shop-aura-display').innerText = aura.toFixed(1);
-			const prog = document.getElementById('aura-progress');
-			const percentage = Math.min(100, (aura / auraSoftLimit) * 100);
-			prog.style.width = `${percentage}%`;
-			if (aura >= auraSoftLimit) {
-				prog.style.backgroundColor = '#eab308';
-			} else {
-				prog.style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-			}
-			document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
-			document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
-			document.getElementById('zen-prog').innerText = `${totalToasts}/500`;
-			document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
-			renderPacks();
-		}
+            document.getElementById('counter').innerText = totalRoasts + totalToasts;
+            document.getElementById('aura-text').innerText = `${Math.floor(aura)}/${auraSoftLimit}`;
+            document.getElementById('shop-aura-display').innerText = Math.floor(aura);
+            document.getElementById('aura-progress').style.width = `${Math.min(100, (aura / auraSoftLimit) * 100)}%`;
+            renderPacks();
+        }
 
         function renderPacks() {
-			const list = document.getElementById('pack-list');
-			list.innerHTML = packs.map(p => {
-				const isWrongMode = p.type !== currentMode;
-				return `
-					<div ${isWrongMode ? '' : `onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();"`} 
-						class="pack-card ${activePackId === p.id ? 'active' : ''} 
-						${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}"
-						style="${isWrongMode ? 'border-color: #222;' : ''}">
-						<span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
-						${isWrongMode ? '<span class="text-[8px] block opacity-50">Switch Mode to Unlock</span>' : ''}
-					</div>
-				`;
-			}).join('');
-		}
-
-        async function fetchLeaderboard() {
-            const { data } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
-            if (data) {
-                document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
-                    <div class="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-gray-800">
-                        <span class="text-xs font-bold text-gray-400">#${i+1} <span class="text-white ml-2">${u.username || 'Anon'}</span></span>
-                        <span class="text-[10px] font-black bg-pink-600/20 text-pink-600 px-2 py-0.5 rounded-full">${(u.total_roasts || 0) + (u.total_toasts || 0)}</span>
-                    </div>
-                `).join('');
-            }
+            const list = document.getElementById('pack-list');
+            list.innerHTML = packs.map(p => {
+                const isWrongMode = p.type !== currentMode;
+                return `
+                    <div ${isWrongMode ? '' : `onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();"`} 
+                        class="pack-card ${activePackId === p.id ? 'active' : ''} 
+                        ${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}">
+                        <span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
+                    </div>`;
+            }).join('');
         }
 
-        function generateShareCard() {
-            const canvas = document.getElementById('shareCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, 1080, 1080);
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.font = '900 80px Inter';
-            const msg = document.getElementById('message').innerText;
-            const words = msg.split(' ');
-            let line = '', y = 450;
-            words.forEach(word => {
-                if ((line + word).length > 15) { 
-                    ctx.fillText(line.toUpperCase(), 540, y); line = word + ' '; y += 110; 
-                } else { line += word + ' '; }
-            });
-            ctx.fillText(line.toUpperCase(), 540, y);
-            ctx.fillStyle = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-            ctx.font = 'italic 900 60px Inter';
-            ctx.fillText('KUTAPP', 540, 1000);
-            const link = document.createElement('a');
-            link.download = `KutApp_${currentMode}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-		
-		let isSuggesting = false;
-		async function submitSuggestion() {
-			const input = document.getElementById('suggest-input');
-			const content = input.value.trim();
-			const btn = document.getElementById('submit-suggest-btn');
-			if (!content || content.length < 5 || isSuggesting) return; 
-
-			isSuggesting = true;
-			btn.innerText = "Processing...";
-			btn.classList.add('opacity-50', 'cursor-not-allowed');
-			const { error } = await sb.from('suggestions').insert([{ content: content, user_id: currentUser.id, status: 'pending' }]);
-
-			if (error) {
-				isSuggesting = false;
-				btn.innerText = "Submit to Queue";
-				btn.classList.remove('opacity-50', 'cursor-not-allowed');
-			} else {
-				input.value = "";
-				btn.innerText = "Submitted!";
-				confetti({ particleCount: 20, spread: 50, colors: ['#db2777'] });
-				setTimeout(() => {
-					isSuggesting = false;
-					btn.innerText = "Submit to Queue";
-					btn.classList.remove('opacity-50', 'cursor-not-allowed');
-					closeAllModals();
-				}, 30000); 
-			}
-		}
-		
-		function buyAura(type, value, stripeLink) {
+        function buyAura(type, value, stripeLink) {
             window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
         }
 
@@ -384,39 +189,40 @@
                 auraSoftLimit = profile.aura_soft_limit ?? 20;
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
-                document.getElementById('username-display').innerText = profile.username || "Guest";
-                document.getElementById('username-input').value = profile.username || "";
+                unlockedPacks = profile.unlocked_packs || [];
+                
+                // Add unlocked packs to the local array
+                if (unlockedPacks.includes(69)) {
+                    if (!packs.some(p => p.id === 69)) packs.push({ id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast" });
+                }
             }
 
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
                 const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
-                if (type === 'extension') {
-                    auraSoftLimit = 50; 
-                    alert("Upgrade Successful! You now refill up to 50 Aura.");
-                } else {
-                    aura += amt;
-                    alert(`Added ${amt} Aura to your stash!`);
+                if (type === 'extension') auraSoftLimit = amt;
+                else if (type === 'pack') aura += amt;
+                else if (type === 'unlock') {
+                    if (!unlockedPacks.includes(amt)) {
+                        unlockedPacks.push(amt);
+                        if (amt === 69) packs.push({ id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast" });
+                    }
                 }
                 await saveToDB();
                 window.history.replaceState({}, document.title, window.location.pathname);
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
 
             updateStatsUI();
 
-            sb.channel('leaderboard-live').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
-                () => fetchLeaderboard()
-            ).subscribe();
-
-            // Passive Refill: 1 point every 5 mins (300,000ms)
             setInterval(async () => {
                 if (aura < auraSoftLimit) {
                     aura++;
                     await saveToDB();
                     updateStatsUI();
                 }
-            }, 300000);
+            }, 300000); // 5 Minutes
         }
 
         async function saveToDB() {
@@ -425,36 +231,15 @@
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
                 total_roasts: totalRoasts, 
-                total_toasts: totalToasts 
+                total_toasts: totalToasts,
+                unlocked_packs: unlockedPacks
             }).eq('id', currentUser.id);
         }
 
-        window.openModal = (id) => { 
-            closeAllModals(); 
-            const m = document.getElementById(id);
-            if(m) {
-                m.classList.add('active'); 
-                document.getElementById('overlay').classList.remove('hidden'); 
-            }
-        };
-        window.closeAllModals = () => { 
-            document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); 
-            document.getElementById('overlay').classList.add('hidden'); 
-            document.getElementById('sidebar').classList.remove('open'); 
-        };
-        window.toggleSidebar = () => { 
-            document.getElementById('sidebar').classList.toggle('open'); 
-            document.getElementById('overlay').classList.toggle('hidden'); 
-        };
+        window.openModal = (id) => { closeAllModals(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
+        window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('overlay').classList.add('hidden'); document.getElementById('sidebar').classList.remove('open'); };
+        window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
 
-        document.getElementById('speakBtn').onclick = () => {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            u.lang = currentLang;
-            window.speechSynthesis.speak(u);
-        };
-        
-        document.getElementById('actionBtn').onclick = triggerAction;
         init();
     </script>
 </body>
