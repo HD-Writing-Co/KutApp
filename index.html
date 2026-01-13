@@ -7,7 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; }
@@ -26,36 +25,26 @@
         .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; }
         .pack-card.active { border-color: #db2777; background: #1a0a10; transform: scale(1.02); }
         #subtext:empty { display: none; }
-        
-        /* Share Card Preview Style */
-        #share-card-container { background: linear-gradient(45deg, #0f0c29, #302b63, #24243e); padding: 40px; border-radius: 20px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
 
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase italic">KUTAPP</div>
-        <div class="flex items-center gap-2">
-            <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
+        <div class="flex items-center gap-3">
             <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
             <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800">☰</button>
         </div>
     </header>
 
-    <main id="capture-area" class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
+    <main class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
         <div class="vibe-toggle">
             <button id="roastMode" onclick="setMode('roast')" class="vibe-btn active-roast">🔥 Roast</button>
             <button id="toastMode" onclick="setMode('toast')" class="vibe-btn">✨ Toast</button>
         </div>
-        
-        <div id="message-container" class="relative">
+        <div id="message-container">
             <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
-            <p id="subtext" class="text-gray-500 text-sm mb-4 h-6 italic uppercase font-bold tracking-widest"></p>
-            
-            <div class="flex justify-center gap-4 mt-4 no-export">
-                <button id="speakBtn" class="bg-white/5 hover:bg-white/10 p-3 rounded-full border border-white/10 transition-all">🔊</button>
-                <button id="shareBtn" onclick="shareAsImage()" class="bg-white/5 hover:bg-white/10 p-3 rounded-full border border-white/10 transition-all">📸</button>
-            </div>
+            <p id="subtext" class="text-gray-500 text-sm mb-8 h-6 italic uppercase font-bold tracking-widest"></p>
         </div>
     </main>
 
@@ -69,50 +58,47 @@
                 </div>
             </div>
         </div>
-        <button id="actionBtn" onclick="triggerAction()" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
+        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
     </footer>
 
-    <div id="leaderboard-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div id="leaderboard-list" class="flex flex-col gap-2"></div>
-    </div>
-
     <div id="shop-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2>
+            <div class="text-[10px] font-bold text-gray-500">Aura: <span id="shop-aura-display" class="text-white">--</span></div>
+            <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
+        </div>
+        
         <div class="space-y-3">
             <button onclick="buyAura('extension', 50, 'https://buy.stripe.com/8x2bJ0chU5oa4jr4pTgbm01')" class="w-full bg-[#111] border border-blue-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-blue-500/5 transition-all">
                 <div class="text-left"><p class="text-[10px] font-black text-blue-500 uppercase">Aura Extension (Sm)</p><p class="text-xs font-black text-white">REFILL LIMIT 50</p></div>
                 <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full">$1.99</span>
             </button>
+
+            <button onclick="buyAura('extension', 100, 'https://buy.stripe.com/14A4gy2Hkg2O4jr7C5gbm02')" class="w-full bg-[#111] border border-purple-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-purple-500/5 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-purple-500 uppercase">Aura Extension (Lg)</p><p class="text-xs font-black text-white">REFILL LIMIT 100</p></div>
+                <span class="text-[10px] font-black bg-purple-600 text-white px-3 py-1 rounded-full">$4.99</span>
+            </button>
+
+            <button onclick="buyAura('pack', 10, 'https://buy.stripe.com/cNi8wObdQg2O6rz3lPgbm03')" class="w-full bg-[#111] border border-gray-700 p-4 rounded-xl flex justify-between items-center hover:bg-white/5 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-gray-400 uppercase">Aura Refill (Sm)</p><p class="text-xs font-black text-white">+10 AURA INSTANT</p></div>
+                <span class="text-[10px] font-black bg-gray-700 text-white px-3 py-1 rounded-full">$0.99</span>
+            </button>
+
+            <button onclick="buyAura('pack', 100, 'https://buy.stripe.com/8x23cu4Ps3g2bLT09Dgbm00')" class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-yellow-500/5 transition-all">
+                <div class="text-left"><p class="text-[10px] font-black text-yellow-500 uppercase">Aura Refill (Lg)</p><p class="text-xs font-black text-white">+100 AURA INSTANT</p></div>
+                <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$2.99</span>
+            </button>
+
             <button onclick="buyAura('unlock', 69, 'https://buy.stripe.com/00w6oGfu617UeY5bSlgbm04')" class="w-full bg-[#1a0a10] border border-pink-900/40 p-4 rounded-xl flex justify-between items-center hover:bg-pink-500/10 transition-all">
                 <div class="text-left"><p class="text-[10px] font-black text-pink-500 uppercase">Special Unlock</p><p class="text-xs font-black text-white">KINK ROULETTE</p></div>
                 <span class="text-[10px] font-black bg-pink-600 text-white px-3 py-1 rounded-full">$1.49</span>
             </button>
-            </div>
-    </div>
-
-    <div id="profile-modal" class="central-modal">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
-        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800">
-            <div class="relative group">
-                <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover bg-black">
-                <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer">
-                    <span class="text-[10px] font-black uppercase">Upload</span>
-                    <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
-                </label>
-            </div>
-            <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
-            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save</button>
         </div>
     </div>
 
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
-        <div class="flex items-center gap-3 mb-8 cursor-pointer group" onclick="openModal('profile-modal')">
-            <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
-            <div><p id="username-display" class="font-bold text-sm text-white group-hover:text-pink-600">Guest</p></div>
-        </div>
-        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Packs</h3>
+        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
         <div id="pack-list" class="flex flex-col gap-2"></div>
     </aside>
 
@@ -123,13 +109,19 @@
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4'; 
         const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        let currentUser, aura = 20, auraSoftLimit = 20, totalRoasts = 0, totalToasts = 0;
-        let currentMode = 'roast', currentLang = 'en-US', activePackId = 2, unlockedPacks = [];
-        
+        let currentUser = null;
+        let aura = 20;
+        let auraSoftLimit = 20; 
+        let totalRoasts = 0;
+        let totalToasts = 0;
+        let currentMode = 'roast';
+        let currentLang = 'en-US';
+        let activePackId = 2;
+        let unlockedPacks = [];
+
         let packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
-            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
             { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" }
         ];
 
@@ -148,7 +140,7 @@
                 if (aura < 1) return openModal('shop-modal');
                 aura -= 1; totalRoasts++;
             } else {
-                if (aura >= auraSoftLimit) return;
+                if (aura >= auraSoftLimit) return alert("Aura Full!");
                 aura = Math.min(auraSoftLimit, aura + 0.25); totalToasts++;
             }
 
@@ -165,87 +157,89 @@
         function updateStatsUI() {
             document.getElementById('counter').innerText = totalRoasts + totalToasts;
             document.getElementById('aura-text').innerText = `${Math.floor(aura)}/${auraSoftLimit}`;
-            document.getElementById('aura-progress').style.width = `${(aura/auraSoftLimit)*100}%`;
+            document.getElementById('shop-aura-display').innerText = Math.floor(aura);
+            document.getElementById('aura-progress').style.width = `${Math.min(100, (aura / auraSoftLimit) * 100)}%`;
             renderPacks();
         }
 
         function renderPacks() {
-            document.getElementById('pack-list').innerHTML = packs.map(p => {
+            const list = document.getElementById('pack-list');
+            list.innerHTML = packs.map(p => {
                 const isWrongMode = p.type !== currentMode;
-                return `<div ${isWrongMode ? '' : `onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();"`} class="pack-card ${activePackId === p.id ? 'active' : ''} ${isWrongMode ? 'opacity-20 grayscale' : 'cursor-pointer'}"><span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span></div>`;
+                return `
+                    <div ${isWrongMode ? '' : `onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();"`} 
+                        class="pack-card ${activePackId === p.id ? 'active' : ''} 
+                        ${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}">
+                        <span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
+                    </div>`;
             }).join('');
         }
 
-        // --- HIGH QUALITY VOICE LOGIC ---
-        document.getElementById('speakBtn').onclick = () => {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(document.getElementById('message').innerText);
-            utterance.lang = currentLang;
-
-            // Find Natural/Premium voice
-            const voices = window.speechSynthesis.getVoices();
-            const premiumVoice = voices.find(v => 
-                v.lang.startsWith(currentLang.split('-')[0]) && 
-                (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))
-            ) || voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
-            
-            if (premiumVoice) utterance.voice = premiumVoice;
-            utterance.pitch = 0.9; // Slightly deeper for more impact
-            utterance.rate = 0.95;
-            window.speechSynthesis.speak(utterance);
-        };
-
-        // --- SHARE CARD LOGIC ---
-        async function shareAsImage() {
-            const btn = document.getElementById('shareBtn');
-            btn.innerText = "⏳";
-            const capture = document.getElementById('capture-area');
-            const canvas = await html2canvas(capture, {
-                backgroundColor: "#050505",
-                ignoreElements: (el) => el.classList.contains('no-export'),
-                scale: 2
-            });
-            const imgData = canvas.toDataURL("image/png");
-            const link = document.createElement('a');
-            link.download = `KutApp-Damage.png`;
-            link.href = imgData;
-            link.click();
-            btn.innerText = "📸";
-        }
-
-        async function fetchLeaderboard() {
-            const { data } = await sb.from('profiles').select('*').order('total_roasts', { ascending: false }).limit(10);
-            document.getElementById('leaderboard-list').innerHTML = data.map((p, i) => `<div class="flex items-center justify-between bg-gray-900/50 p-3 rounded-xl border border-gray-800"><div class="flex items-center gap-3"><span class="text-xs text-gray-500 font-black">#${i+1}</span><img src="${p.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+p.id}" class="w-8 h-8 rounded-full bg-black"><span class="text-xs font-bold">${p.username || 'Ghost'}</span></div><span class="text-xs font-black text-pink-600">${p.total_roasts}</span></div>`).join('');
+        function buyAura(type, value, stripeLink) {
+            window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
         }
 
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
             const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+            
             if (profile) {
                 aura = profile.aura_balance ?? 20;
                 auraSoftLimit = profile.aura_soft_limit ?? 20;
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
                 unlockedPacks = profile.unlocked_packs || [];
-                document.getElementById('username-display').innerText = profile.username || 'Guest';
-                if (profile.avatar_url) document.getElementById('sidebar-avatar').src = profile.avatar_url;
-                if (unlockedPacks.includes(69) && !packs.some(p => p.id === 69)) packs.push({ id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast" });
+                
+                // Add unlocked packs to the local array
+                if (unlockedPacks.includes(69)) {
+                    if (!packs.some(p => p.id === 69)) packs.push({ id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast" });
+                }
             }
+
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('session') === 'success') {
+                const type = urlParams.get('type');
+                const amt = parseInt(urlParams.get('amt'));
+                if (type === 'extension') auraSoftLimit = amt;
+                else if (type === 'pack') aura += amt;
+                else if (type === 'unlock') {
+                    if (!unlockedPacks.includes(amt)) {
+                        unlockedPacks.push(amt);
+                        if (amt === 69) packs.push({ id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast" });
+                    }
+                }
+                await saveToDB();
+                window.history.replaceState({}, document.title, window.location.pathname);
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }
+
             updateStatsUI();
-            setInterval(async () => { if (aura < auraSoftLimit) { aura++; await saveToDB(); updateStatsUI(); } }, 300000);
+
+            setInterval(async () => {
+                if (aura < auraSoftLimit) {
+                    aura++;
+                    await saveToDB();
+                    updateStatsUI();
+                }
+            }, 300000); // 5 Minutes
         }
 
         async function saveToDB() {
             if (!currentUser) return;
-            await sb.from('profiles').update({ aura_balance: aura, aura_soft_limit: auraSoftLimit, total_roasts: totalRoasts, total_toasts: totalToasts, unlocked_packs: unlockedPacks }).eq('id', currentUser.id);
+            await sb.from('profiles').update({ 
+                aura_balance: aura, 
+                aura_soft_limit: auraSoftLimit,
+                total_roasts: totalRoasts, 
+                total_toasts: totalToasts,
+                unlocked_packs: unlockedPacks
+            }).eq('id', currentUser.id);
         }
 
         window.openModal = (id) => { closeAllModals(); document.getElementById(id).classList.add('active'); document.getElementById('overlay').classList.remove('hidden'); };
         window.closeAllModals = () => { document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); document.getElementById('overlay').classList.add('hidden'); document.getElementById('sidebar').classList.remove('open'); };
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('hidden'); };
-        
-        window.speechSynthesis.onvoiceschanged = () => {}; // Trigger voice load
+
         init();
     </script>
 </body>
