@@ -202,7 +202,6 @@
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
             { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
             { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" }
-
         ];
 
         function setMode(mode) {
@@ -297,19 +296,21 @@
 			renderPacks();
 		}
 
-        function renderPacks() {
+        // 2. Updated renderPacks to show the "Lock" icon if not purchased
+		function renderPacks() {
 			const list = document.getElementById('pack-list');
 			list.innerHTML = packs.map(p => {
+				const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
 				const isWrongMode = p.type !== currentMode;
+        
 				return `
-					<div ${isWrongMode ? '' : `onclick="activePackId=${p.id}; currentLang='${p.lang}'; updateStatsUI();"`} 
+					<div onclick="${isLocked ? "openModal('shop-modal')" : isWrongMode ? "" : `selectPack(${p.id}, '${p.lang}')`}" 
 						class="pack-card ${activePackId === p.id ? 'active' : ''} 
-						${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}"
-						style="${isWrongMode ? 'border-color: #222;' : ''}">
-						<span class="text-[10px] font-black uppercase">${p.emoji} ${p.name}</span>
-						${isWrongMode ? '<span class="text-[8px] block opacity-50">Switch Mode to Unlock</span>' : ''}
-					</div>
-				`;
+						${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}">
+						<span class="text-[10px] font-black uppercase">
+							${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}
+						</span>
+					</div>`;
 			}).join('');
 		}
 
