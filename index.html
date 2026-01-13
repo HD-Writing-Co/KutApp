@@ -297,14 +297,20 @@
         }
 
         async function updateProfile() {
-            const name = document.getElementById('username-input').value;
-            if (!currentUser) return;
-            const { error } = await sb.from('profiles').update({ username: name }).eq('id', currentUser.id);
-            if (!error) {
-                document.getElementById('username-display').innerText = name;
-                alert("Profile Saved!");
-            }
-        }
+			const newUsername = document.getElementById('username-input').value;
+			// ... your image upload logic ...
+
+			const { error } = await sb.from('profiles').update({ 
+				username: newUsername,
+				avatar_url: currentAvatarUrl // Ensure this variable is being updated
+			}).eq('id', currentUser.id);
+
+			if (!error) {
+				document.getElementById('username-display').innerText = newUsername;
+				await saveToDB(); // This ensures packs and aura are also synced
+				alert("Profile Saved!");
+			}
+		}
 
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0] || !currentUser) return;
@@ -488,9 +494,16 @@
 				unlockedPacks = profile.unlocked_packs || [];
 				totalRoasts = profile.total_roasts || 0;
 				totalToasts = profile.total_toasts || 0;
-        
+    
+				// Update Username
 				document.getElementById('username-display').innerText = profile.username || "User";
+    
+				// ADD THIS: Update Avatar on refresh
+			if (profile.avatar_url) {
+				document.getElementById('sidebar-avatar').src = profile.avatar_url;
+				document.getElementById('profile-img-modal').src = profile.avatar_url;
 			}
+		}
 
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
@@ -543,17 +556,17 @@
         }
 
         async function saveToDB() {
-            if (!currentUser) return;
-            const { error } = await sb.from('profiles').update({ 
-                aura_balance: aura, 
-                aura_soft_limit: auraSoftLimit,
-                total_roasts: totalRoasts, 
-                total_toasts: totalToasts,
-                unlocked_packs: unlockedPacks // This MUST match the DB column name
-            }).eq('id', currentUser.id);
+			if (!currentUser) return;
+			const { error } = await sb.from('profiles').update({ 
+				aura_balance: aura, 
+				aura_soft_limit: auraSoftLimit,
+				total_roasts: totalRoasts, 
+				total_toasts: totalToasts, // Ensure this comma is here!
+				unlocked_packs: unlockedPacks 
+			}).eq('id', currentUser.id);
 
-            if(error) console.error("Database Save Error:", error.message);
-        }
+			if(error) console.error("Database Save Error:", error.message);
+		}
 
         window.openModal = (id) => { 
             closeAllModals(); 
