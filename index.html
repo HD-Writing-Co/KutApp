@@ -520,7 +520,7 @@
                     if(modalImg) modalImg.src = profile.avatar_url;
                 }
             } else if (session) {
-                await saveToDB(); // Create initial profile if logged in but empty
+                await saveToDB();
             }
 
             // 3. Process URL Params (Stripe Success)
@@ -534,8 +534,6 @@
                 if (type === 'unlock' || pending) {
                     if (finalAmt && !unlockedPacks.includes(finalAmt)) {
                         unlockedPacks.push(finalAmt);
-                        const packName = packs.find(p => p.id === finalAmt)?.name || "New Pack";
-                        alert(`🔓 ${packName} Unlocked!`);
                     }
                     localStorage.removeItem('pending_unlock');
                 } else if (type === 'extension') {
@@ -544,12 +542,11 @@
                     aura += amt;
                 }
 
-                await saveToDB();
+                await saveToDB(); // This saves the 69 to the database permanently
                 window.history.replaceState({}, document.title, window.location.pathname);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
 
-            // 4. Update UI and Listeners
             updateStatsUI();
             renderPacks();
 
@@ -567,18 +564,21 @@
         }
 
         async function saveToDB() {
-			if (!currentUser) return;
-			const { error } = await sb.from('profiles').update({ 
-				aura_balance: aura, 
-				aura_soft_limit: auraSoftLimit,
-				total_roasts: totalRoasts, 
-				total_toasts: totalToasts,
-				unlocked_packs: unlockedPacks // This will now work with the int8[] column
-			}).eq('id', currentUser.id);
+            if (!currentUser) return;
+            const { error } = await sb.from('profiles').update({ 
+                aura_balance: aura, 
+                aura_soft_limit: auraSoftLimit,
+                total_roasts: totalRoasts, 
+                total_toasts: totalToasts,
+                unlocked_packs: unlockedPacks 
+            }).eq('id', currentUser.id);
 
-			if(error) console.error("❌ Database Save Error:", error.message);
-			else console.log("✅ Progress Saved Successfully");
-		}
+            if(error) {
+                console.error("❌ Database Save Error:", error.message);
+            } else {
+                console.log("✅ Progress Saved! Packs:", unlockedPacks);
+            }
+        }
 
         window.openModal = (id) => { 
             closeAllModals(); 
