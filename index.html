@@ -428,22 +428,29 @@
             if (urlParams.get('session') === 'success') {
                 const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
-				
-				if (type === 'unlock') {
-					// If the pack isn't already in the array, add it
-					if (!unlockedPacks.includes(amt)) {
-						unlockedPacks.push(amt);
-					}
-				}
-                if (type === 'extension') {
-                    auraSoftLimit = 50; 
-                    alert("Upgrade Successful! You now refill up to 50 Aura.");
+                
+                if (type === 'unlock') {
+                    // Handle Pack Unlock
+                    if (!unlockedPacks.includes(amt)) {
+                        unlockedPacks.push(amt);
+                        const packName = packs.find(p => p.id === amt)?.name || "New Pack";
+                        alert(`🔓 ${packName} Unlocked!`);
+                    }
+                } else if (type === 'extension') {
+                    // Handle Aura Limit Extension
+                    auraSoftLimit = amt; 
+                    alert(`🚀 Upgrade Successful! You now refill up to ${amt} Aura.`);
                 } else {
-                    aura += amt;
-                    alert(`Added ${amt} Aura to your stash!`);
+                    // Handle Standard Aura Refill (Only if not an unlock or extension)
+                    if (!isNaN(amt)) {
+                        aura += amt;
+                        alert(`🔥 Added ${amt} Aura to your stash!`);
+                    }
                 }
+
                 await saveToDB();
                 window.history.replaceState({}, document.title, window.location.pathname);
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
 
             updateStatsUI();
