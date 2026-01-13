@@ -219,15 +219,14 @@
 
         let currentUser = null;
         let aura = 20;
-		let auraSoftLimit = 20; 
+        let auraSoftLimit = 20; 
         let totalRoasts = 0;
         let totalToasts = 0;
         let currentMode = 'roast';
         let currentLang = 'en-US';
         let activePackId = 2;
-		let unlockedPacks = []; // New state to track purchased packs
+        let unlockedPacks = [];
 
-        // 1. Updated Packs array with Kink Roulette
         const packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
@@ -236,254 +235,9 @@
             { id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast", nsfw: true }
         ];
 
-        // 2. NEW selectPack function
-        function selectPack(id, lang) {
-            const pack = packs.find(p => p.id === id);
-            
-            // Age Gate for NSFW packs
-            if (pack.nsfw && !localStorage.getItem('age_verified')) {
-                const confirmed = confirm("🔞 NSFW CONTENT: This pack is intended for adults. It contains spicy, directional bedroom prompts. Are you 18 or older?");
-                if (confirmed) {
-                    localStorage.setItem('age_verified', 'true');
-                } else {
-                    return; // Stop if they say no
-                }
-            }
-            
-            activePackId = id;
-            currentLang = lang;
-            updateStatsUI();
-        }
-
-        function setMode(mode) {
-			currentMode = mode;
-			if (mode === 'toast') {
-				activePackId = 10;
-			} else {
-				activePackId = 2;
-			}
-			document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
-			document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
-			document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
-			updateStatsUI();
-		}
-
-        async function triggerAction() {
-            const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
-            const targetId = (currentMode === 'toast') ? 10 : activePackId;
-
-            if (currentMode === 'roast') {
-                if (aura < 1) return openModal('shop-modal');
-                aura -= 1; totalRoasts++;
-            } else {
-                if (aura >= auraSoftLimit) return alert("Aura Full!");
-                aura = Math.min(auraSoftLimit + 500, aura + 0.25); totalToasts++;
-                confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff'] });
-            }
-
-            const { data, error } = await sb.from(table).select('*').eq('pack_id', targetId);
-            
-            if (data && data.length > 0) {
-                const item = data[Math.floor(Math.random() * data.length)];
-                document.getElementById('message').innerText = item.content;
-                document.getElementById('subtext').innerText = item.translation || '';
-                document.getElementById('action-row').style.opacity = "1";
-            } else {
-                document.getElementById('message').innerText = "CONTENT MISSING";
-            }
-
-            updateStatsUI();
-            saveToDB();
-        }
-
-        async function updateProfile() {
-			const newUsername = document.getElementById('username-input').value;
-			// ... your image upload logic ...
-
-			const { error } = await sb.from('profiles').update({ 
-				username: newUsername,
-				avatar_url: currentAvatarUrl // Ensure this variable is being updated
-			}).eq('id', currentUser.id);
-
-			if (!error) {
-				document.getElementById('username-display').innerText = newUsername;
-				await saveToDB(); // This ensures packs and aura are also synced
-				alert("Profile Saved!");
-			}
-		}
-
-        async function uploadAvatar(input) {
-            if (!input.files || !input.files[0] || !currentUser) return;
-            const file = input.files[0];
-            const path = `avatars/${currentUser.id}.png`;
-            const { error } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
-            if (!error) {
-                const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(path);
-                await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
-                document.getElementById('profile-img-modal').src = publicUrl;
-                document.getElementById('sidebar-avatar').src = publicUrl;
-            }
-        }
-
-        function updateStatsUI() {
-			document.getElementById('counter').innerText = totalRoasts + totalToasts;
-			const auraDisplay = document.getElementById('aura-text');
-			if (aura >= auraSoftLimit) {
-				auraDisplay.innerText = Math.floor(aura); 
-				auraDisplay.classList.add('text-yellow-500');
-				auraDisplay.classList.remove('text-pink-600');
-			} else {
-				auraDisplay.innerText = `${aura.toFixed(1)}/${auraSoftLimit}`;
-				auraDisplay.classList.remove('text-yellow-500');
-				auraDisplay.classList.add('text-pink-600');
-			}
-			document.getElementById('shop-aura-display').innerText = aura.toFixed(1);
-			const prog = document.getElementById('aura-progress');
-			const percentage = Math.min(100, (aura / auraSoftLimit) * 100);
-			prog.style.width = `${percentage}%`;
-			if (aura >= auraSoftLimit) {
-				prog.style.backgroundColor = '#eab308';
-			} else {
-				prog.style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-			}
-			document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
-			document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
-			document.getElementById('zen-prog').innerText = `${totalToasts}/500`;
-			document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
-			renderPacks();
-		}
-
-        // 2. Updated renderPacks to show the "Lock" icon if not purchased
-		function renderPacks() {
-			const list = document.getElementById('pack-list');
-			list.innerHTML = packs.map(p => {
-				const isWrongMode = p.type !== currentMode;
-				const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
-
-				return `
-					<div onclick="${isLocked ? "openModal('shop-modal')" : isWrongMode ? "" : `selectPack(${p.id}, '${p.lang}')`}" 
-						class="pack-card ${activePackId === p.id ? 'active' : ''} 
-						${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}">
-						<span class="text-[10px] font-black uppercase">
-							${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}
-						</span>
-					</div>
-				`;
-			}).join('');
-		}
-
-        async function fetchLeaderboard() {
-            const { data } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
-            if (data) {
-                document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
-                    <div class="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-gray-800">
-                        <span class="text-xs font-bold text-gray-400">#${i+1} <span class="text-white ml-2">${u.username || 'Anon'}</span></span>
-                        <span class="text-[10px] font-black bg-pink-600/20 text-pink-600 px-2 py-0.5 rounded-full">${(u.total_roasts || 0) + (u.total_toasts || 0)}</span>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function generateShareCard() {
-            const canvas = document.getElementById('shareCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, 1080, 1080);
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.font = '900 80px Inter';
-            const msg = document.getElementById('message').innerText;
-            const words = msg.split(' ');
-            let line = '', y = 450;
-            words.forEach(word => {
-                if ((line + word).length > 15) { 
-                    ctx.fillText(line.toUpperCase(), 540, y); line = word + ' '; y += 110; 
-                } else { line += word + ' '; }
-            });
-            ctx.fillText(line.toUpperCase(), 540, y);
-            ctx.fillStyle = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-            ctx.font = 'italic 900 60px Inter';
-            ctx.fillText('KUTAPP', 540, 1000);
-            const link = document.createElement('a');
-            link.download = `KutApp_${currentMode}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-		
-		let isSuggesting = false;
-		async function submitSuggestion() {
-			const input = document.getElementById('suggest-input');
-			const content = input.value.trim();
-			const btn = document.getElementById('submit-suggest-btn');
-			if (!content || content.length < 5 || isSuggesting) return; 
-
-			isSuggesting = true;
-			btn.innerText = "Processing...";
-			btn.classList.add('opacity-50', 'cursor-not-allowed');
-			const { error } = await sb.from('suggestions').insert([{ content: content, user_id: currentUser.id, status: 'pending' }]);
-
-			if (error) {
-				isSuggesting = false;
-				btn.innerText = "Submit to Queue";
-				btn.classList.remove('opacity-50', 'cursor-not-allowed');
-			} else {
-				input.value = "";
-				btn.innerText = "Submitted!";
-				confetti({ particleCount: 20, spread: 50, colors: ['#db2777'] });
-				setTimeout(() => {
-					isSuggesting = false;
-					btn.innerText = "Submit to Queue";
-					btn.classList.remove('opacity-50', 'cursor-not-allowed');
-					closeAllModals();
-				}, 30000); 
-			}
-		}
-		
-			// This appends ?type=unlock&amt=69 to the Stripe URL
-			// Stripe will then carry these parameters over to the "Success URL" redirect
-			
-		function buyAura(type, value, stripeLink) {
-			if (type === 'unlock') {
-				localStorage.setItem('pending_unlock', value);
-			}
-			window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
-		}
-		
-		async function handleLogin() {
-			const email = document.getElementById('email-login').value;
-			if (!email) return alert("Please enter your email!");
-    
-			const btn = document.getElementById('login-btn');
-			btn.innerText = "Sending...";
-    
-			const { error } = await sb.auth.signInWithOtp({
-				email: email,
-				options: {
-					emailRedirectTo: window.location.origin
-				}
-			});
-
-			if (error) {
-				alert(error.message);
-				btn.innerText = "Send Magic Link";
-			} else {
-				alert("Check your email for the magic login link!");
-				btn.innerText = "Link Sent!";
-			}
-		}
-		
-		function confirmLogout() {
-            if (confirm("Logout? Your Kink Roulette and Aura progress will only be saved if you log back in with this email.")) {
-                sb.auth.signOut().then(() => {
-                    location.href = window.location.origin; // Hard refresh to clear state
-                });
-            }
-        }
-
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
             
-            // 1. Determine User Identity
             if (session && session.user) {
                 currentUser = session.user;
                 document.getElementById('auth-status').innerText = `Logged In: ${currentUser.email}`;
@@ -494,16 +248,8 @@
                 document.getElementById('auth-status').innerText = "Guest Mode (Sync disabled)";
             }
 
-            // 2. Fetch Profile
-            const { data: profile, error: profileError } = await sb
-                .from('profiles')
-                .select('*')
-                .eq('id', currentUser.id)
-                .maybeSingle();
-            
-            if (profileError) {
-                console.error("❌ Profile Fetch Error:", profileError.message);
-            }
+            // 1. Fetch Profile
+            const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
 
             if (profile) {
                 aura = profile.aura_balance ?? 20;
@@ -511,38 +257,32 @@
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
                 unlockedPacks = profile.unlocked_packs || []; 
-                
                 document.getElementById('username-display').innerText = profile.username || "User";
-                
                 if (profile.avatar_url) {
                     document.getElementById('sidebar-avatar').src = profile.avatar_url;
-                    const modalImg = document.getElementById('profile-img-modal');
-                    if(modalImg) modalImg.src = profile.avatar_url;
+                    if(document.getElementById('profile-img-modal')) document.getElementById('profile-img-modal').src = profile.avatar_url;
                 }
-            } else if (session) {
-                await saveToDB();
             }
 
-            // 3. Process URL Params (Stripe Success)
+            // 2. Process Stripe Success IMMEDIATELY after loading profile
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
-                const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
-                const pending = localStorage.getItem('pending_unlock');
-                const finalAmt = amt || (pending ? parseInt(pending) : null);
+                const type = urlParams.get('type');
                 
-                if (type === 'unlock' || pending) {
-                    if (finalAmt && !unlockedPacks.includes(finalAmt)) {
-                        unlockedPacks.push(finalAmt);
+                if (type === 'unlock' || amt === 69) {
+                    if (!unlockedPacks.includes(69)) {
+                        unlockedPacks.push(69);
+                        console.log("Adding Pack 69 to local array...");
                     }
-                    localStorage.removeItem('pending_unlock');
                 } else if (type === 'extension') {
-                    auraSoftLimit = amt || 50; 
-                } else if (!isNaN(amt)) {
+                    auraSoftLimit = amt;
+                } else if (type === 'pack') {
                     aura += amt;
                 }
 
-                await saveToDB(); // This saves the 69 to the database permanently
+                // Force an immediate save to DB so it persists on refresh
+                await saveToDB();
                 window.history.replaceState({}, document.title, window.location.pathname);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
@@ -550,10 +290,7 @@
             updateStatsUI();
             renderPacks();
 
-            sb.channel('leaderboard-live').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
-                () => fetchLeaderboard()
-            ).subscribe();
-
+            // Background Refill
             setInterval(async () => {
                 if (aura < auraSoftLimit) {
                     aura++;
@@ -565,35 +302,79 @@
 
         async function saveToDB() {
             if (!currentUser) return;
-            
-            // SECURITY CHECK: If we know the user has 69 unlocked in memory, 
-            // but the save object is empty, stop the save to prevent relocking.
-            const saveObject = {
+            const { error } = await sb.from('profiles').update({ 
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
                 total_roasts: totalRoasts, 
                 total_toasts: totalToasts,
                 unlocked_packs: unlockedPacks 
-            };
+            }).eq('id', currentUser.id);
 
-            const { error } = await sb.from('profiles')
-                .update(saveObject)
-                .eq('id', currentUser.id);
-
-            if(error) {
-                console.error("❌ Database Save Error:", error.message);
-            } else {
-                console.log("✅ Sync Successful. Current Packs in DB:", unlockedPacks);
-            }
+            if(error) console.error("Save Error:", error.message);
+            else console.log("Sync Successful. Packs:", unlockedPacks);
         }
 
-        window.openModal = (id) => { 
-            closeAllModals(); 
-            const m = document.getElementById(id);
-            if(m) {
-                m.classList.add('active'); 
-                document.getElementById('overlay').classList.remove('hidden'); 
+        function selectPack(id, lang) {
+            const pack = packs.find(p => p.id === id);
+            if (pack.nsfw && !localStorage.getItem('age_verified')) {
+                if (confirm("🔞 NSFW CONTENT: Are you 18 or older?")) localStorage.setItem('age_verified', 'true');
+                else return;
             }
+            activePackId = id;
+            currentLang = lang;
+            updateStatsUI();
+        }
+
+        function renderPacks() {
+            const list = document.getElementById('pack-list');
+            list.innerHTML = packs.map(p => {
+                const isWrongMode = p.type !== currentMode;
+                const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
+                return `
+                    <div onclick="${isLocked ? "openModal('shop-modal')" : isWrongMode ? "" : `selectPack(${p.id}, '${p.lang}')`}" 
+                        class="pack-card ${activePackId === p.id ? 'active' : ''} 
+                        ${isWrongMode ? 'opacity-20 grayscale cursor-not-allowed' : 'cursor-pointer'}">
+                        <span class="text-[10px] font-black uppercase">
+                            ${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}
+                        </span>
+                    </div>`;
+            }).join('');
+        }
+
+        function updateStatsUI() {
+            document.getElementById('counter').innerText = totalRoasts + totalToasts;
+            const auraDisplay = document.getElementById('aura-text');
+            auraDisplay.innerText = aura >= auraSoftLimit ? Math.floor(aura) : `${aura.toFixed(1)}/${auraSoftLimit}`;
+            const prog = document.getElementById('aura-progress');
+            prog.style.width = `${Math.min(100, (aura / auraSoftLimit) * 100)}%`;
+            renderPacks();
+        }
+
+        async function triggerAction() {
+            const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
+            const targetId = (currentMode === 'toast') ? 10 : activePackId;
+            if (currentMode === 'roast') {
+                if (aura < 1) return openModal('shop-modal');
+                aura -= 1; totalRoasts++;
+            } else {
+                aura = Math.min(auraSoftLimit + 500, aura + 0.25); totalToasts++;
+            }
+            const { data } = await sb.from(table).select('*').eq('pack_id', targetId);
+            if (data?.length > 0) {
+                const item = data[Math.floor(Math.random() * data.length)];
+                document.getElementById('message').innerText = item.content;
+                document.getElementById('subtext').innerText = item.translation || '';
+                document.getElementById('action-row').style.opacity = "1";
+            }
+            updateStatsUI();
+            saveToDB();
+        }
+
+        // Shared Helpers
+        window.openModal = (id) => { 
+            document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active'));
+            document.getElementById(id)?.classList.add('active'); 
+            document.getElementById('overlay').classList.remove('hidden'); 
         };
         window.closeAllModals = () => { 
             document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); 
@@ -605,23 +386,6 @@
             document.getElementById('overlay').classList.toggle('hidden'); 
         };
 
-		document.getElementById('speakBtn').onclick = () => {
-			window.speechSynthesis.cancel();
-			const text = document.getElementById('message').innerText;
-			const msg = new SpeechSynthesisUtterance(text);
-			msg.lang = currentLang;
-
-            const voices = window.speechSynthesis.getVoices();
-            const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]) && 
-                (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))) 
-                || voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
-            
-            if (bestVoice) msg.voice = bestVoice;
-            msg.pitch = 0.95; 
-            msg.rate = 0.9; 
-            window.speechSynthesis.speak(msg);
-        };
-        
         document.getElementById('actionBtn').onclick = triggerAction;
         init();
     </script>
