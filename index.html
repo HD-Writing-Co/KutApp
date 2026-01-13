@@ -489,19 +489,20 @@
 			const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
     
 			if (profile) {
-				aura = profile.aura_balance ?? 20;
-				auraSoftLimit = profile.aura_soft_limit ?? 20;
-				unlockedPacks = profile.unlocked_packs || [];
-				totalRoasts = profile.total_roasts || 0;
-				totalToasts = profile.total_toasts || 0;
+			aura = profile.aura_balance ?? 20;
+			auraSoftLimit = profile.aura_soft_limit ?? 20;
+			totalRoasts = profile.total_roasts || 0;
+			totalToasts = profile.total_toasts || 0;
+			unlockedPacks = profile.unlocked_packs || []; // Load the {69} here
     
-				// Update Username
-				document.getElementById('username-display').innerText = profile.username || "User";
+			// Update UI
+			document.getElementById('username-display').innerText = profile.username || "User";
     
-				// ADD THIS: Update Avatar on refresh
+			// Fix: Load Avatar from DB on refresh
 			if (profile.avatar_url) {
 				document.getElementById('sidebar-avatar').src = profile.avatar_url;
-				document.getElementById('profile-img-modal').src = profile.avatar_url;
+				const modalImg = document.getElementById('profile-img-modal');
+				if(modalImg) modalImg.src = profile.avatar_url;
 			}
 		}
 
@@ -561,11 +562,12 @@
 				aura_balance: aura, 
 				aura_soft_limit: auraSoftLimit,
 				total_roasts: totalRoasts, 
-				total_toasts: totalToasts, // Ensure this comma is here!
-				unlocked_packs: unlockedPacks 
+				total_toasts: totalToasts,
+				unlocked_packs: unlockedPacks // This will now work with the int8[] column
 			}).eq('id', currentUser.id);
 
-			if(error) console.error("Database Save Error:", error.message);
+			if(error) console.error("❌ Database Save Error:", error.message);
+			else console.log("✅ Progress Saved Successfully");
 		}
 
         window.openModal = (id) => { 
