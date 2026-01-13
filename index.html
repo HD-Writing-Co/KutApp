@@ -486,7 +486,15 @@
 			}
 
 			// Fetch Profile
-			const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+			const { data: profile, error: profileError } = await sb
+				.from('profiles')
+				.select('aura_balance, aura_soft_limit, unlocked_packs, total_roasts, total_toasts, username, avatar_url')
+				.eq('id', currentUser.id)
+				.maybeSingle(); // Changed .single() to .maybeSingle()
+
+			if (profileError) {
+				console.error("Profile Fetch Error:", profileError.message);
+			}
     
 			if (profile) {
 			aura = profile.aura_balance ?? 20;
