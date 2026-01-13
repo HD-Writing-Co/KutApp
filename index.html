@@ -405,8 +405,10 @@
 		}
 		
 		function buyAura(type, value, stripeLink) {
-            window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
-        }
+			// This appends ?type=unlock&amt=69 to the Stripe URL
+			// Stripe will then carry these parameters over to the "Success URL" redirect
+			window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
+		}
 
         async function init() {
             const { data: { session } } = await sb.auth.getSession();
@@ -426,6 +428,13 @@
             if (urlParams.get('session') === 'success') {
                 const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
+				
+				if (type === 'unlock') {
+					// If the pack isn't already in the array, add it
+					if (!unlockedPacks.includes(amt)) {
+						unlockedPacks.push(amt);
+					}
+				}
                 if (type === 'extension') {
                     auraSoftLimit = 50; 
                     alert("Upgrade Successful! You now refill up to 50 Aura.");
