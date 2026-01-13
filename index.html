@@ -313,21 +313,6 @@
 					</div>`;
 			}).join('');
 		}
-		
-				// 3. Simple Age Gate logic
-		function selectPack(id, lang) {
-			const pack = packs.find(p => p.id === id);
-			if (pack.nsfw && !localStorage.getItem('age_verified')) {
-				if (confirm("🔞 NSFW CONTENT: This pack is intended for adults. Are you 18 or older?")) {
-					localStorage.setItem('age_verified', 'true');
-				} else {
-					return;
-				}
-			}
-			activePackId = id;
-			currentLang = lang;
-			updateStatsUI();
-		}
 
         async function fetchLeaderboard() {
             const { data } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
