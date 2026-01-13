@@ -287,22 +287,35 @@
         }
 
         async function init() {
-            const { data: { session } } = await sb.auth.getSession();
-            currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
-            const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-            if (profile) {
-                aura = profile.aura_balance ?? 20;
-                totalRoasts = profile.total_roasts || 0;
-                totalToasts = profile.total_toasts || 0;
-                document.getElementById('username-display').innerText = profile.username || "Guest";
-                document.getElementById('username-input').value = profile.username || "";
-                if (profile.avatar_url) {
-                    document.getElementById('sidebar-avatar').src = profile.avatar_url;
-                    document.getElementById('profile-img-modal').src = profile.avatar_url;
-                }
-            }
-            updateStatsUI();
-        }
+			const { data: { session } } = await sb.auth.getSession();
+			currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
+			const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+			if (profile) {
+				aura = profile.aura_balance ?? 20;
+				totalRoasts = profile.total_roasts || 0;
+				totalToasts = profile.total_toasts || 0;
+				document.getElementById('username-display').innerText = profile.username || "Guest";
+				document.getElementById('username-input').value = profile.username || "";
+				if (profile.avatar_url) {
+					document.getElementById('sidebar-avatar').src = profile.avatar_url;
+					document.getElementById('profile-img-modal').src = profile.avatar_url;
+				}
+			}
+			updateStatsUI();
+
+			// --- INSERT THE REALTIME LISTENER HERE ---
+			sb.channel('leaderboard-live')
+				.on(
+					'postgres_changes', 
+					{ event: '*', schema: 'public', table: 'profiles' }, 
+					(payload) => {
+						console.log('Global score update:', payload);
+						// Refresh the leaderboard data in the background
+						fetchLeaderboard();
+					}
+				)
+				.subscribe();
+		}
 
         async function saveToDB() {
             if (!currentUser) return;
