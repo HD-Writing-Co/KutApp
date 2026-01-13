@@ -449,6 +449,7 @@
                 }
 
                 await saveToDB();
+				renderPacks();
                 window.history.replaceState({}, document.title, window.location.pathname);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
