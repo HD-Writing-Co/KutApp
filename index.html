@@ -197,8 +197,8 @@
 					class="w-full bg-pink-600 text-white text-[10px] font-black py-3 rounded-lg uppercase">Send Magic Link</button>
 			</div>
 			<div id="logged-in-view" class="hidden">
-				<button onclick="sb.auth.signOut().then(() => location.reload())" 
-					class="w-full bg-gray-800 text-white text-[10px] font-black py-3 rounded-lg uppercase">Logout</button>
+				<button onclick="confirmLogout()" 
+					class="w-full bg-gray-800 text-white text-[10px] font-black py-3 rounded-lg uppercase">Logout Account</button>
 			</div>
 		</div>	
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
@@ -471,37 +471,58 @@
 				btn.innerText = "Link Sent!";
 			}
 		}
+		
+		function confirmLogout() {
+            if (confirm("Logout? Your Kink Roulette and Aura progress will only be saved if you log back in with this email.")) {
+                sb.auth.signOut().then(() => {
+                    location.href = window.location.origin; // Hard refresh to clear state
+                });
+            }
+        }
 
         async function init() {
-			const { data: { session } } = await sb.auth.getSession();
-    
-			if (session) {
-				currentUser = session.user;
-				document.getElementById('auth-status').innerText = `Logged In: ${currentUser.email}`;
-				document.getElementById('logged-out-view').classList.add('hidden');
-				document.getElementById('logged-in-view').classList.remove('hidden');
-			} else {
-				currentUser = (await sb.auth.signInAnonymously()).data.user;
-				document.getElementById('auth-status').innerText = "Guest Mode (Sync disabled)";
-			}
+            const { data: { session } } = await sb.auth.getSession();
+            
+            // 1. Determine User Identity
+            if (session && session.user) {
+                currentUser = session.user;
+                document.getElementById('auth-status').innerText = `Logged In: ${currentUser.email}`;
+                document.getElementById('logged-out-view').classList.add('hidden');
+                document.getElementById('logged-in-view').classList.remove('hidden');
+            } else {
+                currentUser = (await sb.auth.signInAnonymously()).data.user;
+                document.getElementById('auth-status').innerText = "Guest Mode (Sync disabled)";
+            }
 
-			// Fetch Profile
-			const { data: profile, error: profileError } = await sb
-				.from('profiles')
-				.select('aura_balance, aura_soft_limit, unlocked_packs, total_roasts, total_toasts, username, avatar_url')
-				.eq('id', currentUser.id)
-				.maybeSingle(); // Changed .single() to .maybeSingle()
+            // 2. Fetch Profile - Using maybeSingle() to prevent the 406 crash
+            const { data: profile, error: profileError } = await sb
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+            
+            if (profileError) {
+                console.error("❌ Profile Fetch Error:", profileError.message);
+            }
 
-			if (profileError) {
-				console.error("Profile Fetch Error:", profileError.message);
-			}
-    
-			if (profile) {
-			aura = profile.aura_balance ?? 20;
-			auraSoftLimit = profile.aura_soft_limit ?? 20;
-			totalRoasts = profile.total_roasts || 0;
-			totalToasts = profile.total_toasts || 0;
-			unlockedPacks = profile.unlocked_packs || []; // Load the {69} here
+            if (profile) {
+                aura = profile.aura_balance ?? 20;
+                auraSoftLimit = profile.aura_soft_limit ?? 20;
+                totalRoasts = profile.total_roasts || 0;
+                totalToasts = profile.total_toasts || 0;
+                unlockedPacks = profile.unlocked_packs || []; 
+                
+                document.getElementById('username-display').innerText = profile.username || "User";
+                
+                if (profile.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = profile.avatar_url;
+                    const modalImg = document.getElementById('profile-img-modal');
+                    if(modalImg) modalImg.src = profile.avatar_url;
+                }
+            } else if (session) {
+                // If logged in but no profile exists, create one immediately
+                await saveToDB();
+            }
     
 			// Update UI
 			document.getElementById('username-display').innerText = profile.username || "User";
