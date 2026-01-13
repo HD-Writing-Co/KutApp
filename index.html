@@ -32,6 +32,7 @@
     <header class="w-full flex justify-between items-center max-w-5xl z-10">
         <div class="font-black text-2xl tracking-tighter uppercase italic">KUTAPP</div>
         <div class="flex items-center gap-3">
+            <button onclick="openModal('leaderboard-modal'); fetchLeaderboard();" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
             <button onclick="openModal('shop-modal')" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
             <button onclick="toggleSidebar()" class="bg-gray-900 p-3 rounded-xl border border-gray-800">☰</button>
         </div>
@@ -58,7 +59,7 @@
                 </div>
             </div>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
+        <button id="actionBtn" onclick="triggerAction()" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
     </footer>
 
     <div id="shop-modal" class="central-modal">
@@ -67,28 +68,23 @@
             <div class="text-[10px] font-bold text-gray-500">Aura: <span id="shop-aura-display" class="text-white">--</span></div>
             <button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button>
         </div>
-        
         <div class="space-y-3">
             <button onclick="buyAura('extension', 50, 'https://buy.stripe.com/8x2bJ0chU5oa4jr4pTgbm01')" class="w-full bg-[#111] border border-blue-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-blue-500/5 transition-all">
                 <div class="text-left"><p class="text-[10px] font-black text-blue-500 uppercase">Aura Extension (Sm)</p><p class="text-xs font-black text-white">REFILL LIMIT 50</p></div>
                 <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full">$1.99</span>
             </button>
-
             <button onclick="buyAura('extension', 100, 'https://buy.stripe.com/14A4gy2Hkg2O4jr7C5gbm02')" class="w-full bg-[#111] border border-purple-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-purple-500/5 transition-all">
                 <div class="text-left"><p class="text-[10px] font-black text-purple-500 uppercase">Aura Extension (Lg)</p><p class="text-xs font-black text-white">REFILL LIMIT 100</p></div>
                 <span class="text-[10px] font-black bg-purple-600 text-white px-3 py-1 rounded-full">$4.99</span>
             </button>
-
             <button onclick="buyAura('pack', 10, 'https://buy.stripe.com/cNi8wObdQg2O6rz3lPgbm03')" class="w-full bg-[#111] border border-gray-700 p-4 rounded-xl flex justify-between items-center hover:bg-white/5 transition-all">
                 <div class="text-left"><p class="text-[10px] font-black text-gray-400 uppercase">Aura Refill (Sm)</p><p class="text-xs font-black text-white">+10 AURA INSTANT</p></div>
                 <span class="text-[10px] font-black bg-gray-700 text-white px-3 py-1 rounded-full">$0.99</span>
             </button>
-
             <button onclick="buyAura('pack', 100, 'https://buy.stripe.com/8x23cu4Ps3g2bLT09Dgbm00')" class="w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-yellow-500/5 transition-all">
                 <div class="text-left"><p class="text-[10px] font-black text-yellow-500 uppercase">Aura Refill (Lg)</p><p class="text-xs font-black text-white">+100 AURA INSTANT</p></div>
                 <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$2.99</span>
             </button>
-
             <button onclick="buyAura('unlock', 69, 'https://buy.stripe.com/00w6oGfu617UeY5bSlgbm04')" class="w-full bg-[#1a0a10] border border-pink-900/40 p-4 rounded-xl flex justify-between items-center hover:bg-pink-500/10 transition-all">
                 <div class="text-left"><p class="text-[10px] font-black text-pink-500 uppercase">Special Unlock</p><p class="text-xs font-black text-white">KINK ROULETTE</p></div>
                 <span class="text-[10px] font-black bg-pink-600 text-white px-3 py-1 rounded-full">$1.49</span>
@@ -96,8 +92,32 @@
         </div>
     </div>
 
+    <div id="profile-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800 mb-6">
+            <div class="relative group">
+                <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover bg-black">
+                <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                    <span class="text-[10px] font-black uppercase text-white">Upload</span>
+                    <input type="file" id="avatar-upload" class="hidden" accept="image/*" onchange="uploadAvatar(this)">
+                </label>
+            </div>
+            <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
+            <button onclick="updateProfile()" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save Changes</button>
+        </div>
+    </div>
+
+    <div id="leaderboard-modal" class="central-modal">
+        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button onclick="closeAllModals()" class="text-gray-500 text-xs">✕</button></div>
+        <div id="leaderboard-list" class="flex flex-col gap-2"></div>
+    </div>
+
     <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
         <button onclick="toggleSidebar()" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
+        <div class="flex items-center gap-3 mb-8 cursor-pointer group" onclick="openModal('profile-modal')">
+            <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
+            <div class="text-left"><p id="username-display" class="font-bold text-sm text-white group-hover:text-pink-600 transition-colors">Guest</p><p class="text-[8px] uppercase text-gray-500 font-black">View Profile</p></div>
+        </div>
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
         <div id="pack-list" class="flex flex-col gap-2"></div>
     </aside>
@@ -122,6 +142,7 @@
         let packs = [
             { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
             { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
+            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
             { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" }
         ];
 
@@ -142,6 +163,7 @@
             } else {
                 if (aura >= auraSoftLimit) return alert("Aura Full!");
                 aura = Math.min(auraSoftLimit, aura + 0.25); totalToasts++;
+                confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff'] });
             }
 
             const { data } = await sb.from(table).select('*').eq('pack_id', activePackId);
@@ -175,6 +197,41 @@
             }).join('');
         }
 
+        async function fetchLeaderboard() {
+            const { data } = await sb.from('profiles').select('*').order('total_roasts', { ascending: false }).limit(10);
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = data.map((p, i) => `
+                <div class="flex items-center justify-between bg-gray-900/50 p-3 rounded-xl border border-gray-800">
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs font-black text-gray-500 w-4">#${i+1}</span>
+                        <img src="${p.avatar_url || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+p.id}" class="w-8 h-8 rounded-full bg-black">
+                        <span class="text-xs font-bold">${p.username || 'Ghost'}</span>
+                    </div>
+                    <span class="text-xs font-black text-pink-600">${p.total_roasts + (p.total_toasts || 0)}</span>
+                </div>
+            `).join('');
+        }
+
+        async function updateProfile() {
+            const newName = document.getElementById('username-input').value;
+            if (!newName) return;
+            await sb.from('profiles').update({ username: newName }).eq('id', currentUser.id);
+            document.getElementById('username-display').innerText = newName;
+            closeAllModals();
+        }
+
+        async function uploadAvatar(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const fileExt = file.name.split('.').pop();
+            const filePath = `${currentUser.id}/avatar.${fileExt}`;
+            await sb.storage.from('avatars').upload(filePath, file, { upsert: true });
+            const { data: { publicUrl } } = sb.storage.from('avatars').getPublicUrl(filePath);
+            await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+            document.getElementById('profile-img-modal').src = publicUrl;
+            document.getElementById('sidebar-avatar').src = publicUrl;
+        }
+
         function buyAura(type, value, stripeLink) {
             window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
         }
@@ -190,10 +247,13 @@
                 totalRoasts = profile.total_roasts || 0;
                 totalToasts = profile.total_toasts || 0;
                 unlockedPacks = profile.unlocked_packs || [];
-                
-                // Add unlocked packs to the local array
-                if (unlockedPacks.includes(69)) {
-                    if (!packs.some(p => p.id === 69)) packs.push({ id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast" });
+                document.getElementById('username-display').innerText = profile.username || 'Guest';
+                if (profile.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = profile.avatar_url;
+                    document.getElementById('profile-img-modal').src = profile.avatar_url;
+                }
+                if (unlockedPacks.includes(69) && !packs.some(p => p.id === 69)) {
+                    packs.push({ id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast" });
                 }
             }
 
@@ -213,16 +273,12 @@
                 window.history.replaceState({}, document.title, window.location.pathname);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
-
             updateStatsUI();
-
             setInterval(async () => {
                 if (aura < auraSoftLimit) {
-                    aura++;
-                    await saveToDB();
-                    updateStatsUI();
+                    aura++; await saveToDB(); updateStatsUI();
                 }
-            }, 300000); // 5 Minutes
+            }, 300000); 
         }
 
         async function saveToDB() {
