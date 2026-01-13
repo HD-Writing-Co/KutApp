@@ -44,6 +44,22 @@
 		#subtext:empty {
 			display: none;
 		}
+		
+		/* Fix for mobile height and scrolling phrases */
+		#message-container {
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			flex: 1;
+			width: 100%;
+			max-height: 50vh; /* Limits text height so button stays visible */
+			overflow-y: auto;
+			padding: 10px;
+		}
+		#message {
+			line-height: 1.1;
+		}
     </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
@@ -172,6 +188,11 @@
             <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
             <div class="text-left"><p id="username-display" class="font-bold text-sm text-white group-hover:text-pink-600 transition-colors">Guest</p><p class="text-[8px] uppercase text-gray-500 font-black">View Profile</p></div>
         </div>
+		<div id="auth-section" class="mt-auto border-t border-gray-800 pt-4">
+			<p id="auth-status" class="text-[10px] text-gray-500 mb-2 font-bold uppercase">Guest Mode</p>
+			<input id="email-login" type="email" placeholder="Email" class="w-full bg-gray-900 border border-gray-800 rounded-lg p-2 text-xs mb-2">
+			<button onclick="handleLogin()" class="w-full bg-pink-600 text-white text-[10px] font-black py-2 rounded-lg uppercase">Login / Sign Up</button>
+		</div>
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
         <div id="pack-list" class="flex flex-col gap-2">
             </div>
@@ -413,23 +434,47 @@
 			}
 			window.location.href = `${stripeLink}?type=${type}&amt=${value}`;
 		}
+		
+		async function handleLogin() {
+			const email = document.getElementById('email-login').value;
+			if (!email) return alert("Enter your email!");
+    
+			const { error } = await sb.auth.signInWithOtp({
+				email: email,
+				options: {
+					emailRedirectTo: 'https://kutapp.fun/'
+				}
+			});
+
+			if (error) alert(error.message);
+			else alert("Check your email for the magic login link!");
+		}
 
         async function init() {
-            const { data: { session } } = await sb.auth.getSession();
-            currentUser = session?.user || (await sb.auth.signInAnonymously()).data.user;
-            const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
-            
-            if (profile) {
-                aura = profile.aura_balance ?? 20;
-                auraSoftLimit = profile.aura_soft_limit ?? 20;
-                totalRoasts = profile.total_roasts || 0;
-                totalToasts = profile.total_toasts || 0;
-                // Load the list from DB, or default to empty array
-                unlockedPacks = profile.unlocked_packs || [];
-                
-                document.getElementById('username-display').innerText = profile.username || "Guest";
-                document.getElementById('username-input').value = profile.username || "";
-            }
+			const { data: { session } } = await sb.auth.getSession();
+    
+			// If no session, we stay in Guest Mode (Anonymous)
+			if (!session) {
+				currentUser = (await sb.auth.signInAnonymously()).data.user;
+				document.getElementById('auth-status').innerText = "Guest Mode (Progress not saved)";
+			} else {
+				currentUser = session.user;
+				document.getElementById('auth-status').innerText = `Logged in: ${currentUser.email}`;
+				document.getElementById('email-login').style.display = 'none'; // Hide input if logged in
+			}
+
+			// Fetch Profile
+			const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+    
+			if (profile) {
+				aura = profile.aura_balance ?? 20;
+				auraSoftLimit = profile.aura_soft_limit ?? 20;
+				unlockedPacks = profile.unlocked_packs || [];
+				totalRoasts = profile.total_roasts || 0;
+				totalToasts = profile.total_toasts || 0;
+        
+				document.getElementById('username-display').innerText = profile.username || "User";
+			}
 
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
