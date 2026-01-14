@@ -191,16 +191,14 @@
 		<div id="login-container" class="mb-8 p-4 bg-gray-900/50 border border-gray-800 rounded-xl">
 			<p id="auth-status" class="text-[9px] font-black text-pink-600 uppercase mb-2 tracking-widest">Account Status</p>
 			<div id="logged-out-view" class="flex flex-col items-center justify-center space-y-4">
-				<h2 class="text-xl font-bold">Sign in to sync your Aura</h2>
-				<div id="email-step" class="flex flex-col space-y-2 w-full max-w-xs">
-					<input type="email" id="email-input" placeholder="Enter your email" class="px-4 py-2 rounded bg-white/10 border border-white/20 text-center">
-					<button onclick="sendOTP()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-bold transition">Send Login Code</button>
-				</div>
-				<div id="otp-step" class="flex flex-col space-y-2 w-full max-w-xs hidden">
-					<p class="text-sm text-gray-300 text-center">Enter the 6-digit code sent to your email:</p>
-					<input type="text" id="otp-input" placeholder="000000" class="px-4 py-2 rounded bg-white/10 border border-white/20 text-center text-xl tracking-widest">
-					<button onclick="verifyOTP()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-bold transition">Verify & Login</button>
-					<button onclick="location.reload()" class="text-xs text-gray-400 underline">Try again</button>
+				<h2 class="text-xl font-bold text-white">Sign in to sync your Aura</h2>
+				<div id="login-form" class="flex flex-col space-y-3 w-full max-w-xs">
+					<input type="email" id="email-input" placeholder="Enter your email" 
+					class="px-4 py-2 rounded bg-white/10 border border-white/20 text-center text-white focus:outline-none focus:border-blue-500">
+					<button onclick="sendMagicLink()" id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition flex items-center justify-center">
+					<span>Send Magic Link</span>
+					</button>
+					<p id="login-msg" class="text-xs text-gray-400 text-center hidden">Check your email for the login link!</p>
 				</div>
 			</div>
 			<div id="logged-in-view" class="hidden">
@@ -516,21 +514,31 @@
             }
         }
 
-        async function verifyOTP() {
-            const email = document.getElementById('email-input').value;
-            const token = document.getElementById('otp-input').value.trim();
+        async function sendMagicLink() {
+            const email = document.getElementById('email-input').value.trim();
+            const btn = document.getElementById('login-btn');
+            const msg = document.getElementById('login-msg');
 
-            const { data, error } = await sb.auth.verifyOtp({
-                email,
-                token,
-                type: 'magiclink' // Or 'email' depending on Supabase version
+            if (!email) return alert("Please enter your email!");
+
+            btn.disabled = true;
+            btn.innerText = "Sending...";
+
+            const { error } = await sb.auth.signInWithOtp({
+                email: email,
+                options: {
+                    emailRedirectTo: window.location.origin // Sends them back to kutapp.fun
+                }
             });
 
             if (error) {
-                alert("Invalid code. Please try again.");
+                alert("Error: " + error.message);
+                btn.disabled = false;
+                btn.innerText = "Send Magic Link";
             } else {
-                // Success! The onAuthStateChange listener in init() will catch this.
-                location.reload(); 
+                btn.classList.add('hidden');
+                msg.classList.remove('hidden');
+                alert("Success! Check your email and click the link to log in.");
             }
         }
 
