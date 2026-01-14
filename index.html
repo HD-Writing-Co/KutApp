@@ -495,14 +495,16 @@
         }
 
         async function init() {
-            // 1. AUTH LISTENER: Catches the Magic Link login immediately
+            console.log("🛠️ Init started. Checking auth...");
+
+            // 1. SET UP THE AUTH LISTENER FIRST
             sb.auth.onAuthStateChange(async (event, session) => {
+                console.log("🔔 Auth Event:", event);
                 if (session && session.user) {
                     currentUser = session.user;
                     document.getElementById('logged-out-view').classList.add('hidden');
                     document.getElementById('logged-in-view').classList.remove('hidden');
                     
-                    // Pull the latest data for the logged-in user
                     const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
                     if (profile) {
                         aura = profile.aura_balance ?? 20;
@@ -516,66 +518,27 @@
                         updateStatsUI();
                         renderPacks();
                     }
-                } else if (event === 'SIGNED_OUT') {
-                    currentUser = null;
-                    location.reload(); // Refresh to clear state on logout
+                    // Handle purchase redirects after login confirmed
+                    handlePurchaseRedirect();
+                } else {
+                    document.getElementById('logged-out-view').classList.remove('hidden');
+                    document.getElementById('logged-in-view').classList.add('hidden');
                 }
             });
 
-            // 2. INITIAL SESSION CHECK
+            // 2. WAIT FOR HASH (Magic Link processing time)
+            if (window.location.hash.includes('access_token')) {
+                console.log("🔑 Magic link detected, waiting for session...");
+                await new Promise(r => setTimeout(r, 500)); 
+            }
+
+            // 3. INITIAL CHECK
             const { data: { session } } = await sb.auth.getSession();
             if (session) {
                 currentUser = session.user;
-                document.getElementById('logged-out-view').classList.add('hidden');
-                document.getElementById('logged-in-view').classList.remove('hidden');
             }
 
-            if (currentUser) {
-                const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-                if (profile) {
-                    aura = profile.aura_balance ?? 20;
-                    auraSoftLimit = profile.aura_soft_limit ?? 20;
-                    totalRoasts = profile.total_roasts || 0;
-                    totalToasts = profile.total_toasts || 0;
-                    unlockedPacks = profile.unlocked_packs || [];
-                    document.getElementById('username-display').innerText = profile.username || "User";
-                    if (profile.avatar_url) document.getElementById('sidebar-avatar').src = profile.avatar_url;
-                }
-            }
-
-            // 3. PROCESS PURCHASE (Aura & Kink Unlock)
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('session') === 'success') {
-                const amt = parseInt(urlParams.get('amt'));
-                let updated = false;
-
-                if (amt === 69 && !unlockedPacks.includes(69)) {
-                    unlockedPacks.push(69);
-                    updated = true;
-                }
-                
-                if (amt === 500 && auraSoftLimit < 100) {
-                    auraSoftLimit = 100;
-                    aura = 100;
-                    updated = true;
-                }
-
-                if (updated) {
-                    if (typeof confetti === 'function') {
-                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                    }
-                    if (currentUser) {
-                        await sb.from('profiles').update({ 
-                            unlocked_packs: unlockedPacks, 
-                            aura_soft_limit: auraSoftLimit,
-                            aura_balance: aura 
-                        }).eq('id', currentUser.id);
-                    }
-                }
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-
-            // 4. FINALIZING SETUP
+            // 4. LOAD APP STATE
             isLoaded = true;
             updateStatsUI();
             renderPacks();
@@ -588,15 +551,45 @@
 
             // Aura Refill Timer
             setInterval(async () => {
-                if (aura < auraSoftLimit && isLoaded) {
+                if (aura < auraSoftLimit && isLoaded && currentUser) {
                     aura++;
                     await saveToDB();
                     updateStatsUI();
                 }
             }, 300000);
 
-            console.log("🚀 App fully loaded.");
-        }// End of init
+            console.log("🚀 App initialized.");
+        }
+
+        async function handlePurchaseRedirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('session') === 'success') {
+                const amt = parseInt(urlParams.get('amt'));
+                let updated = false;
+
+                if (amt === 69 && !unlockedPacks.includes(69)) {
+                    unlockedPacks.push(69);
+                    updated = true;
+                }
+                if (amt === 500 && auraSoftLimit < 100) {
+                    auraSoftLimit = 100;
+                    aura = 100;
+                    updated = true;
+                }
+
+                if (updated) {
+                    if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70 });
+                    await sb.from('profiles').update({ 
+                        unlocked_packs: unlockedPacks, 
+                        aura_soft_limit: auraSoftLimit,
+                        aura_balance: aura 
+                    }).eq('id', currentUser.id);
+                }
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // --- Keep all your other functions (saveToDB, toggleSidebar, etc.) below this line ---
 
         async function saveToDB() {
             if (!currentUser || !isLoaded) return;
@@ -607,11 +600,9 @@
                 total_toasts: totalToasts,
                 unlocked_packs: unlockedPacks 
             };
-            const { error } = await sb.from('profiles').update(saveObject).eq('id', currentUser.id);
-            if(error) console.error("❌ Save Error:", error.message);
+            await sb.from('profiles').update(saveObject).eq('id', currentUser.id);
         }
 
-        // Global UI Helpers
         window.openModal = (id) => { 
             closeAllModals(); 
             const m = document.getElementById(id);
@@ -634,19 +625,14 @@
             overlay.classList.toggle('hidden');
         };
 
-        // Text-to-Speech Helper
         document.getElementById('speakBtn').onclick = () => {
             window.speechSynthesis.cancel();
             const text = document.getElementById('message').innerText;
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = currentLang;
-            const voices = window.speechSynthesis.getVoices();
-            const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0])) || voices[0];
-            if (bestVoice) msg.voice = bestVoice;
             window.speechSynthesis.speak(msg);
         };
 
-        // Final event listeners and boot
         document.getElementById('actionBtn').onclick = triggerAction;
         init();
     </script>
