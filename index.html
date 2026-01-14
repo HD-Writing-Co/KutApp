@@ -495,63 +495,51 @@
         }
 
         async function init() {
-            // 1. Get the session
+            // 1. Session & Auth Check
             const { data: { session } } = await sb.auth.getSession();
-            
-            if (session && session.user) {
+            if (session) {
                 currentUser = session.user;
-                document.getElementById('auth-status').innerText = `Logged In: ${currentUser.email}`;
                 document.getElementById('logged-out-view').classList.add('hidden');
                 document.getElementById('logged-in-view').classList.remove('hidden');
-            } else {
-                // REMOVED: Automatic anonymous sign-in
-                document.getElementById('auth-status').innerText = "Guest Mode (Sync disabled)";
-                document.getElementById('logged-out-view').classList.remove('hidden');
-                document.getElementById('logged-in-view').classList.add('hidden');
             }
 
             if (currentUser) {
-                // 2. Fetch Profile
                 const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
-
                 if (profile) {
                     aura = profile.aura_balance ?? 20;
                     auraSoftLimit = profile.aura_soft_limit ?? 20;
                     totalRoasts = profile.total_roasts || 0;
                     totalToasts = profile.total_toasts || 0;
-                    unlockedPacks = profile.unlocked_packs || []; 
+                    unlockedPacks = profile.unlocked_packs || [];
                     document.getElementById('username-display').innerText = profile.username || "User";
-                    if (profile.avatar_url) {
-                        document.getElementById('sidebar-avatar').src = profile.avatar_url;
-                    }
-                } else {
-                    // If no profile row found, create it now
-                    await saveToDB();
+                    if (profile.avatar_url) document.getElementById('sidebar-avatar').src = profile.avatar_url;
                 }
             }
 
-            // 3. Process Purchase
+            // 2. Process Purchase (The Stripe Success Redirect)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
                 const amt = parseInt(urlParams.get('amt'));
                 if (amt === 69 && !unlockedPacks.includes(69)) {
                     unlockedPacks.push(69);
-                    await saveToDB();
+                    // Force an immediate save so the unlock "sticks"
+                    await sb.from('profiles').update({ unlocked_packs: unlockedPacks }).eq('id', currentUser.id);
                 }
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            isLoaded = true; 
+            // 3. Mark app as loaded to enable background syncing
+            isLoaded = true;
             updateStatsUI();
             renderPacks();
 
-            // Real-time Leaderboard Listener
+            // 4. Real-time Leaderboard Listener
             sb.channel('leaderboard-live').on('postgres_changes', 
                 { event: '*', schema: 'public', table: 'profiles' }, 
                 () => fetchLeaderboard()
             ).subscribe();
 
-            // Aura Refill Timer
+            // 5. Aura Refill Timer
             setInterval(async () => {
                 if (aura < auraSoftLimit && isLoaded) {
                     aura++;
@@ -561,20 +549,10 @@
             }, 300000);
 
             console.log("🚀 App fully loaded, cloud sync enabled.");
-        }
+        } // End of init
 
         async function saveToDB() {
-            // 1. Check if user exists
-            if (!currentUser) return;
-            
-            // 2. RACE CONDITION FIX: 
-            // If init() hasn't finished, isLoaded will be false. 
-            // We stop the save so we don't overwrite your purchase with [].
-            if (!isLoaded) {
-                console.log("⏳ Save blocked: Profile still loading...");
-                return;
-            }
-
+            if (!currentUser || !isLoaded) return;
             const saveObject = {
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
@@ -582,18 +560,11 @@
                 total_toasts: totalToasts,
                 unlocked_packs: unlockedPacks 
             };
-
-            const { error } = await sb.from('profiles')
-                .update(saveObject)
-                .eq('id', currentUser.id);
-
-            if(error) {
-                console.error("❌ Database Save Error:", error.message);
-            } else {
-                console.log("✅ Sync Successful. Current Packs in DB:", unlockedPacks);
-            }
+            const { error } = await sb.from('profiles').update(saveObject).eq('id', currentUser.id);
+            if(error) console.error("❌ Save Error:", error.message);
         }
 
+        // Global UI Helpers
         window.openModal = (id) => { 
             closeAllModals(); 
             const m = document.getElementById(id);
@@ -602,33 +573,33 @@
                 document.getElementById('overlay').classList.remove('hidden'); 
             }
         };
+
         window.closeAllModals = () => { 
             document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active')); 
             document.getElementById('overlay').classList.add('hidden'); 
             document.getElementById('sidebar').classList.remove('open'); 
         };
+
         window.toggleSidebar = () => { 
-            document.getElementById('sidebar').classList.toggle('open'); 
-            document.getElementById('overlay').classList.toggle('hidden'); 
+            const sbElem = document.getElementById('sidebar');
+            const overlay = document.getElementById('overlay');
+            sbElem.classList.toggle('open');
+            overlay.classList.toggle('hidden');
         };
 
-		document.getElementById('speakBtn').onclick = () => {
-			window.speechSynthesis.cancel();
-			const text = document.getElementById('message').innerText;
-			const msg = new SpeechSynthesisUtterance(text);
-			msg.lang = currentLang;
-
+        // Text-to-Speech Helper
+        document.getElementById('speakBtn').onclick = () => {
+            window.speechSynthesis.cancel();
+            const text = document.getElementById('message').innerText;
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = currentLang;
             const voices = window.speechSynthesis.getVoices();
-            const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]) && 
-                (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))) 
-                || voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
-            
+            const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0])) || voices[0];
             if (bestVoice) msg.voice = bestVoice;
-            msg.pitch = 0.95; 
-            msg.rate = 0.9; 
             window.speechSynthesis.speak(msg);
         };
-        
+
+        // Final event listeners and boot
         document.getElementById('actionBtn').onclick = triggerAction;
         init();
     </script>
