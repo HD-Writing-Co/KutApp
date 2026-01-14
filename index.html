@@ -482,56 +482,74 @@
         }
 
         async function init() {
-            // 1. Get the session
             const { data: { session } } = await sb.auth.getSession();
             
+            // 1. Determine User Identity
             if (session && session.user) {
                 currentUser = session.user;
                 document.getElementById('auth-status').innerText = `Logged In: ${currentUser.email}`;
                 document.getElementById('logged-out-view').classList.add('hidden');
                 document.getElementById('logged-in-view').classList.remove('hidden');
             } else {
-                // REMOVED: Automatic anonymous sign-in
+                currentUser = (await sb.auth.signInAnonymously()).data.user;
                 document.getElementById('auth-status').innerText = "Guest Mode (Sync disabled)";
-                document.getElementById('logged-out-view').classList.remove('hidden');
-                document.getElementById('logged-in-view').classList.add('hidden');
             }
 
-            if (currentUser) {
-                // 2. Fetch Profile
-                const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+            // 2. Fetch Profile
+            const { data: profile, error: profileError } = await sb
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .maybeSingle();
+            
+            if (profileError) {
+                console.error("❌ Profile Fetch Error:", profileError.message);
+            }
 
-                if (profile) {
-                    aura = profile.aura_balance ?? 20;
-                    auraSoftLimit = profile.aura_soft_limit ?? 20;
-                    totalRoasts = profile.total_roasts || 0;
-                    totalToasts = profile.total_toasts || 0;
-                    unlockedPacks = profile.unlocked_packs || []; 
-                    document.getElementById('username-display').innerText = profile.username || "User";
-                    if (profile.avatar_url) {
-                        document.getElementById('sidebar-avatar').src = profile.avatar_url;
-                    }
-                } else {
-                    // If no profile row found, create it now
-                    await saveToDB();
+            if (profile) {
+                aura = profile.aura_balance ?? 20;
+                auraSoftLimit = profile.aura_soft_limit ?? 20;
+                totalRoasts = profile.total_roasts || 0;
+                totalToasts = profile.total_toasts || 0;
+                unlockedPacks = profile.unlocked_packs || []; 
+                
+                document.getElementById('username-display').innerText = profile.username || "User";
+                
+                if (profile.avatar_url) {
+                    document.getElementById('sidebar-avatar').src = profile.avatar_url;
+                    const modalImg = document.getElementById('profile-img-modal');
+                    if(modalImg) modalImg.src = profile.avatar_url;
                 }
+            } else if (session) {
+                await saveToDB();
             }
 
-            // 3. Process Purchase
+            // 3. Process URL Params (Stripe Success)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
+                const type = urlParams.get('type');
                 const amt = parseInt(urlParams.get('amt'));
-                if (amt === 69 && !unlockedPacks.includes(69)) {
-                    unlockedPacks.push(69);
-                    await saveToDB();
+                const pending = localStorage.getItem('pending_unlock');
+                const finalAmt = amt || (pending ? parseInt(pending) : null);
+                
+                if (type === 'unlock' || pending) {
+                    if (finalAmt && !unlockedPacks.includes(finalAmt)) {
+                        unlockedPacks.push(finalAmt);
+                    }
+                    localStorage.removeItem('pending_unlock');
+                } else if (type === 'extension') {
+                    auraSoftLimit = amt || 50; 
+                } else if (!isNaN(amt)) {
+                    aura += amt;
                 }
+
+                await saveToDB(); // This saves the 69 to the database permanently
                 window.history.replaceState({}, document.title, window.location.pathname);
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
 
-            isLoaded = true; // Unlock the saveToDB function
             updateStatsUI();
             renderPacks();
-        }
 
             sb.channel('leaderboard-live').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
                 () => fetchLeaderboard()
