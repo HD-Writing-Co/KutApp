@@ -202,8 +202,9 @@
 				</div>
 			</div>
 			<div id="logged-in-view" class="hidden">
-				<button onclick="confirmLogout()" 
-					class="w-full bg-gray-800 text-white text-[10px] font-black py-3 rounded-lg uppercase">Logout Account</button>
+				<button onclick="logout()" class="w-full text-left px-4 py-2 hover:bg-white/10 text-red-400 flex items-center space-x-3">
+				<span>Logout</span>
+				</button>
 			</div>
 		</div>	
         <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
@@ -542,20 +543,18 @@
             }
         }
 
-        // 1. AUTH LOGIC: Sends the link to the user
+        // 1. AUTH LOGIC
         async function sendMagicLink() {
             const email = document.getElementById('email-input').value.trim();
+            const btn = document.getElementById('login-btn');
             if (!email) return alert("Please enter your email!");
 
-            const btn = document.getElementById('login-btn');
             btn.innerText = "Sending...";
             btn.disabled = true;
 
             const { error } = await sb.auth.signInWithOtp({
                 email: email,
-                options: {
-                    emailRedirectTo: window.location.origin
-                }
+                options: { emailRedirectTo: window.location.origin }
             });
 
             if (error) {
@@ -563,25 +562,28 @@
                 btn.innerText = "Send Magic Link";
                 btn.disabled = false;
             } else {
-                alert("Success! Check your email for the login link.");
+                alert("Success! Check your email.");
                 document.getElementById('login-msg').classList.remove('hidden');
                 btn.classList.add('hidden');
             }
         }
 
-        // 2. INITIALIZATION: Runs when the page loads
-        async function init() {
-            console.log("🛠️ App Initializing...");
+        async function logout() {
+            const { error } = await sb.auth.signOut();
+            if (error) alert(error.message);
+            else location.reload();
+        }
 
-            // LISTEN for the moment the user clicks the Magic Link and returns
+        // 2. INITIALIZATION
+        async function init() {
+            console.log("🛠️ App Booting...");
+
             sb.auth.onAuthStateChange(async (event, session) => {
-                console.log("🔔 Auth Event:", event);
                 if (session && session.user) {
                     currentUser = session.user;
                     document.getElementById('logged-out-view').classList.add('hidden');
                     document.getElementById('logged-in-view').classList.remove('hidden');
                     
-                    // Load User Profile Data
                     const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
                     if (profile) {
                         aura = profile.aura_balance ?? 20;
@@ -595,7 +597,6 @@
                         updateStatsUI();
                         renderPacks();
                     }
-                    // Handle any pending Stripe purchases
                     handlePurchaseRedirect();
                 } else {
                     document.getElementById('logged-out-view').classList.remove('hidden');
@@ -603,39 +604,69 @@
                 }
             });
 
-            // Brief pause to allow browser to parse Magic Link hash if present
-            if (window.location.hash.includes('access_token')) {
-                await new Promise(r => setTimeout(r, 500)); 
-            }
-
-            // Check if a session already exists
             const { data: { session } } = await sb.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-            }
+            if (session) currentUser = session.user;
 
             isLoaded = true;
             updateStatsUI();
             renderPacks();
 
-            // Real-time Leaderboard Listener
+            // Real-time Leaderboard
             sb.channel('leaderboard-live').on('postgres_changes', 
-                { event: '*', schema: '
+                { event: '*', schema: 'public', table: 'profiles' }, 
+                () => fetchLeaderboard()
+            ).subscribe();
 
-        // --- Keep all your other functions (saveToDB, toggleSidebar, etc.) below this line ---
+            // Aura Refill Timer
+            setInterval(async () => {
+                if (aura < auraSoftLimit && isLoaded && currentUser) {
+                    aura++;
+                    await saveToDB();
+                    updateStatsUI();
+                }
+            }, 300000);
+        }
+
+        async function handlePurchaseRedirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('session') === 'success' && currentUser) {
+                const amt = parseInt(urlParams.get('amt'));
+                let updated = false;
+
+                if (amt === 69 && !unlockedPacks.includes(69)) {
+                    unlockedPacks.push(69);
+                    updated = true;
+                }
+                if (amt === 500 && auraSoftLimit < 100) {
+                    auraSoftLimit = 100;
+                    aura = 100;
+                    updated = true;
+                }
+
+                if (updated) {
+                    if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70 });
+                    await sb.from('profiles').update({ 
+                        unlocked_packs: unlockedPacks, 
+                        aura_soft_limit: auraSoftLimit,
+                        aura_balance: aura 
+                    }).eq('id', currentUser.id);
+                }
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
 
         async function saveToDB() {
             if (!currentUser || !isLoaded) return;
-            const saveObject = {
+            const { error } = await sb.from('profiles').update({
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
                 total_roasts: totalRoasts, 
                 total_toasts: totalToasts,
                 unlocked_packs: unlockedPacks 
-            };
-            await sb.from('profiles').update(saveObject).eq('id', currentUser.id);
+            }).eq('id', currentUser.id);
         }
 
+        // 3. UI WINDOW FUNCTIONS
         window.openModal = (id) => { 
             closeAllModals(); 
             const m = document.getElementById(id);
@@ -652,10 +683,8 @@
         };
 
         window.toggleSidebar = () => { 
-            const sbElem = document.getElementById('sidebar');
-            const overlay = document.getElementById('overlay');
-            sbElem.classList.toggle('open');
-            overlay.classList.toggle('hidden');
+            document.getElementById('sidebar').classList.toggle('open'); 
+            document.getElementById('overlay').classList.toggle('hidden'); 
         };
 
         document.getElementById('speakBtn').onclick = () => {
