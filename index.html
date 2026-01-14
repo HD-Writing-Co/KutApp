@@ -190,11 +190,18 @@
         </div>
 		<div id="login-container" class="mb-8 p-4 bg-gray-900/50 border border-gray-800 rounded-xl">
 			<p id="auth-status" class="text-[9px] font-black text-pink-600 uppercase mb-2 tracking-widest">Account Status</p>
-			<div id="logged-out-view">
-				<input id="email-login" type="email" placeholder="Email Address" 
-					class="w-full bg-black border border-gray-800 rounded-lg p-3 text-xs text-white mb-2 focus:border-pink-600 outline-none">
-				<button onclick="handleLogin()" id="login-btn" 
-					class="w-full bg-pink-600 text-white text-[10px] font-black py-3 rounded-lg uppercase">Send Magic Link</button>
+			<div id="logged-out-view" class="flex flex-col items-center justify-center space-y-4">
+				<h2 class="text-xl font-bold">Sign in to sync your Aura</h2>
+				<div id="email-step" class="flex flex-col space-y-2 w-full max-w-xs">
+					<input type="email" id="email-input" placeholder="Enter your email" class="px-4 py-2 rounded bg-white/10 border border-white/20 text-center">
+					<button onclick="sendOTP()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-full font-bold transition">Send Login Code</button>
+				</div>
+				<div id="otp-step" class="flex flex-col space-y-2 w-full max-w-xs hidden">
+					<p class="text-sm text-gray-300 text-center">Enter the 6-digit code sent to your email:</p>
+					<input type="text" id="otp-input" placeholder="000000" class="px-4 py-2 rounded bg-white/10 border border-white/20 text-center text-xl tracking-widest">
+					<button onclick="verifyOTP()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-full font-bold transition">Verify & Login</button>
+					<button onclick="location.reload()" class="text-xs text-gray-400 underline">Try again</button>
+				</div>
 			</div>
 			<div id="logged-in-view" class="hidden">
 				<button onclick="confirmLogout()" 
@@ -491,6 +498,39 @@
                 sb.auth.signOut().then(() => {
                     location.href = window.location.origin; // Hard refresh to clear state
                 });
+            }
+        }
+		
+		async function sendOTP() {
+            const email = document.getElementById('email-input').value;
+            if (!email) return alert("Please enter your email");
+
+            const { error } = await sb.auth.signInWithOtp({ email });
+
+            if (error) {
+                alert("Error sending code: " + error.message);
+            } else {
+                document.getElementById('email-step').classList.add('hidden');
+                document.getElementById('otp-step').classList.remove('hidden');
+                alert("Check your email for a 6-digit code!");
+            }
+        }
+
+        async function verifyOTP() {
+            const email = document.getElementById('email-input').value;
+            const token = document.getElementById('otp-input').value.trim();
+
+            const { data, error } = await sb.auth.verifyOtp({
+                email,
+                token,
+                type: 'magiclink' // Or 'email' depending on Supabase version
+            });
+
+            if (error) {
+                alert("Invalid code. Please try again.");
+            } else {
+                // Success! The onAuthStateChange listener in init() will catch this.
+                location.reload(); 
             }
         }
 
