@@ -1,743 +1,684 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>KutApp | Emotional Damage</title>
-    <meta name="title" content="KutApp | Emotional Damage">
-    <meta name="description" content="The unfiltered roast and toast app. Get a reality check or an ego boost. Use at your own risk.">
-
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://kutapp.fun/">
-    <meta property="og:title" content="KutApp | Emotional Damage">
-    <meta property="og:description" content="Brutally honest roasts and spicy affirmations. Your ego isn't ready.">
-    <meta property="og:image" content="https://kutapp.fun/og-image.png">
-
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://kutapp.fun/">
-    <meta property="twitter:title" content="KutApp | Emotional Damage">
-    <meta property="twitter:description" content="Brutally honest roasts and spicy affirmations. Your ego isn't ready.">
-    <meta property="twitter:image" content="https://kutapp.fun/og-image.png">
-
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #050505; color: #ffffff; overflow: hidden; margin: 0; }
-        .sidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); transform: translateX(100%); z-index: 100; }
-        .sidebar.open { transform: translateX(0); }
-        .central-modal {
-            position: fixed; top: 10%; left: 50%; transform: translateX(-50%) scale(0.9);
-            width: 95%; max-width: 400px; background: #0a0a0a; border: 1px solid #222;
-            border-radius: 24px; z-index: 60; display: none; padding: 24px; max-height: 85vh; overflow-y: auto; opacity: 0; transition: all 0.2s ease;
-        }
-        .central-modal.active { display: block; opacity: 1; transform: translateX(-50%) scale(1); }
-        .vibe-toggle { display: flex; background: #111; padding: 4px; border-radius: 50px; border: 1px solid #222; margin-bottom: 20px; }
-        .vibe-btn { padding: 8px 20px; border-radius: 50px; font-size: 10px; font-weight: 900; text-transform: uppercase; transition: all 0.2s; cursor: pointer; color: #666; }
-        .vibe-btn.active-roast { background: #db2777; color: white; }
-        .vibe-btn.active-toast { background: #fbbf24; color: black; }
-        .pack-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; cursor: pointer; margin-bottom: 8px; transition: all 0.2s; }
-        .pack-card.active { border-color: #db2777; background: #1a0a10; transform: scale(1.02); }
-        .achievement-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
-        .achievement-fill { height: 100%; transition: width 0.5s ease; }
-
-        #subtext:empty { display: none; }
-
-        /* Fix for mobile height and scrolling phrases */
-        #message-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            flex: 1;
-            width: 100%;
-            max-height: 50vh; /* Limits text height so button stays visible */
-            overflow-y: auto;
-            padding: 10px;
-        }
-        #message { line-height: 1.1; }
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>KutApp | Emotional Damage</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;900&display=swap');
+    body { font-family: 'Inter', sans-serif; background:#050505; color:#fff; margin:0; overflow:hidden; }
+    .central-modal{position:fixed;top:10%;left:50%;transform:translateX(-50%) scale(.9);width:95%;max-width:400px;background:#0a0a0a;border:1px solid #222;border-radius:24px;z-index:60;display:none;padding:24px;max-height:85vh;overflow-y:auto;opacity:0;transition:all .2s ease;}
+    .central-modal.active{display:block;opacity:1;transform:translateX(-50%) scale(1);}
+    .vibe-toggle{display:flex;background:#111;padding:4px;border-radius:50px;border:1px solid #222;margin-bottom:20px;}
+    .vibe-btn{padding:8px 20px;border-radius:50px;font-size:10px;font-weight:900;text-transform:uppercase;cursor:pointer;color:#666;}
+    .vibe-btn.active-roast{background:#db2777;color:#fff;}
+    .vibe-btn.active-toast{background:#fbbf24;color:#000;}
+    .pack-card{background:#111;border:1px solid #222;padding:12px;border-radius:12px;cursor:pointer;margin-bottom:8px;transition:all .2s;}
+    .pack-card.active{border-color:#db2777;background:#1a0a10;transform:scale(1.02);}
+    #message-container{display:flex;flex-direction:column;justify-content:center;align-items:center;flex:1;width:100%;max-height:50vh;overflow-y:auto;padding:10px;}
+    #message{line-height:1.1;}
+    #subtext:empty{display:none;}
+  </style>
 </head>
 <body class="flex flex-col items-center justify-between h-screen p-6 md:p-12 relative pt-16">
 
-    <canvas id="shareCanvas" width="1080" height="1080" style="display:none;"></canvas>
+  <canvas id="shareCanvas" width="1080" height="1080" style="display:none;"></canvas>
 
-    <header class="w-full flex justify-between items-center max-w-5xl z-10">
-        <div class="font-black text-2xl tracking-tighter uppercase italic">KUTAPP</div>
-        <div class="flex items-center gap-3">
-            <button id="leaderboard-btn" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
-            <button id="shop-btn" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
-            <button id="sidebar-toggle" class="bg-gray-900 p-3 rounded-xl border border-gray-800">☰</button>
-        </div>
-    </header>
+  <header class="w-full flex justify-between items-center max-w-5xl z-10">
+    <div class="font-black text-2xl tracking-tighter uppercase italic">KUTAPP</div>
+    <div class="flex items-center gap-3">
+      <button id="leaderboard-btn" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🏆</button>
+      <button id="shop-btn" class="bg-gray-900/50 p-3 rounded-xl border border-gray-800">🛒</button>
+      <button id="sidebar-toggle" class="bg-gray-900 p-3 rounded-xl border border-gray-800">☰</button>
+    </div>
+  </header>
 
-    <main class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
-        <div class="vibe-toggle">
-            <button id="roastMode" class="vibe-btn active-roast">🔥 Roast</button>
-            <button id="toastMode" class="vibe-btn">✨ Toast</button>
-        </div>
-        <div id="message-container">
-            <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
-            <p id="subtext" class="text-gray-500 text-sm mb-8 h-6 italic uppercase font-bold tracking-widest"></p>
-            <div id="action-row" class="opacity-0 flex gap-3 justify-center">
-                <button id="shareCardBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
-                <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
-            </div>
-        </div>
-    </main>
+  <main class="w-full flex-grow flex flex-col justify-center items-center px-6 text-center">
+    <div class="vibe-toggle">
+      <button id="roastMode" class="vibe-btn active-roast">🔥 Roast</button>
+      <button id="toastMode" class="vibe-btn">✨ Toast</button>
+    </div>
+    <div id="message-container">
+      <h1 id="message" class="text-4xl md:text-6xl font-black mb-4 uppercase italic">READY?</h1>
+      <p id="subtext" class="text-gray-500 text-sm mb-8 h-6 italic uppercase font-bold tracking-widest"></p>
+      <div id="action-row" class="opacity-0 flex gap-3 justify-center">
+        <button id="shareCardBtn" class="bg-gray-900/40 px-4 py-2 rounded-lg border border-gray-800 text-[9px] font-black uppercase">Share Card</button>
+        <button id="speakBtn" class="bg-gray-900/40 p-2 rounded-lg border border-gray-800">🔊</button>
+      </div>
+    </div>
+  </main>
 
-    <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
-        <div class="flex justify-between items-end px-2">
-            <div><p id="counter" class="text-3xl font-black">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Impacts</p></div>
-            <div class="text-right">
-                <p id="aura-text" class="text-xl font-black text-pink-600">20/20</p>
-                <div class="w-24 h-1.5 bg-gray-900 rounded-full mt-1 overflow-hidden">
-                    <div id="aura-progress" class="bg-pink-600 h-full" style="width: 100%"></div>
-                </div>
-            </div>
+  <footer class="w-full max-w-sm flex flex-col gap-4 mb-10">
+    <div class="flex justify-between items-end px-2">
+      <div><p id="counter" class="text-3xl font-black">0</p><p class="text-[9px] uppercase font-bold text-gray-600">Impacts</p></div>
+      <div class="text-right">
+        <p id="aura-text" class="text-xl font-black text-pink-600">20/20</p>
+        <div class="w-24 h-1.5 bg-gray-900 rounded-full mt-1 overflow-hidden">
+          <div id="aura-progress" class="bg-pink-600 h-full" style="width:100%"></div>
         </div>
-        <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
-    </footer>
+      </div>
+    </div>
+    <button id="actionBtn" class="w-full bg-white text-black font-black py-6 rounded-2xl uppercase shadow-2xl transition-all active:scale-95">Get Roasted</button>
+  </footer>
 
-    <div id="profile-modal" class="central-modal" aria-hidden="true">
-        <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button id="close-profile" class="text-gray-500 text-xs">✕</button></div>
-        <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800 mb-6">
-            <div class="relative group">
-                <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover bg-black">
-                <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
-                    <span class="text-[10px] font-black uppercase text-white">Upload</span>
-                    <input type="file" id="avatar-upload" class="hidden" accept="image/*">
-                </label>
-            </div>
-            <input type="text" id="username-input" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold" placeholder="Username">
-            <button id="save-profile-btn" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save Changes</button>
-        </div>
-        <h3 class="text-[10px] font-black uppercase text-gray-500 mb-3 tracking-widest">Achievements</h3>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Thick Skin (Roasts)</span><span id="skin-prog">0/1000</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="skin-fill" class="achievement-fill bg-pink-600" style="width: 0%"></div></div></div>
-        <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Zen Master (Toasts)</span><span id="zen-prog">0/500</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="zen-fill" class="achievement-fill bg-yellow-500" style="width: 0%"></div></div></div>
+  <!-- Profile modal -->
+  <div id="profile-modal" class="central-modal">
+    <div class="flex justify-between items-center mb-6"><h2 class="text-xl font-black uppercase italic text-white">Profile</h2><button id="close-profile" class="text-gray-500 text-xs">✕</button></div>
+    <div class="flex flex-col items-center gap-4 bg-gray-900 p-6 rounded-xl border border-gray-800 mb-6">
+      <div class="relative group">
+        <img id="profile-img-modal" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-24 h-24 rounded-full border-2 border-pink-600 object-cover bg-black">
+        <label class="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+          <span class="text-[10px] font-black uppercase text-white">Upload</span>
+          <input type="file" id="avatar-upload" class="hidden" accept="image/*">
+        </label>
+      </div>
+      <input id="username-input" type="text" placeholder="Username" class="bg-black border border-gray-700 text-white p-3 rounded-lg w-full text-center font-bold">
+      <button id="save-profile-btn" class="w-full bg-white text-black py-3 rounded-lg font-black uppercase text-xs">Save Changes</button>
+    </div>
+    <h3 class="text-[10px] font-black uppercase text-gray-500 mb-3 tracking-widest">Achievements</h3>
+    <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Thick Skin (Roasts)</span><span id="skin-prog">0/1000</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="skin-fill" class="achievement-fill bg-pink-600" style="width:0%"></div></div></div>
+    <div class="achievement-card"><div class="flex justify-between text-[10px] font-black uppercase mb-1"><span>Zen Master (Toasts)</span><span id="zen-prog">0/500</span></div><div class="w-full h-1.5 bg-gray-800 rounded-full overflow-hidden"><div id="zen-fill" class="achievement-fill bg-yellow-500" style="width:0%"></div></div></div>
+  </div>
+
+  <!-- Shop modal -->
+  <div id="shop-modal" class="central-modal">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2>
+      <div class="text-[10px] font-bold text-gray-500">Aura: <span id="shop-aura-display" class="text-white">20</span></div>
+      <button id="close-shop" class="text-gray-500 text-xs">✕</button>
+    </div>
+    <div class="space-y-3">
+      <button data-type="extension" data-amt="50" data-link="https://buy.stripe.com/8x2bJ0chU5oa4jr4pTgbm01" class="shop-item w-full bg-[#111] border border-blue-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-blue-500/5 transition-all">
+        <div class="text-left"><p class="text-[10px] font-black text-blue-500 uppercase">Aura Extension (Sm)</p><p class="text-xs font-black text-white">REFILL LIMIT 50</p></div>
+        <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full">$1.99</span>
+      </button>
+      <button data-type="extension" data-amt="100" data-link="https://buy.stripe.com/14A4gy2Hkg2O4jr7C5gbm02" class="shop-item w-full bg-[#111] border border-purple-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-purple-500/5 transition-all">
+        <div class="text-left"><p class="text-[10px] font-black text-purple-500 uppercase">Aura Extension (Lg)</p><p class="text-xs font-black text-white">REFILL LIMIT 100</p></div>
+        <span class="text-[10px] font-black bg-purple-600 text-white px-3 py-1 rounded-full">$4.99</span>
+      </button>
+      <button data-type="pack" data-amt="10" data-link="https://buy.stripe.com/cNi8wObdQg2O6rz3lPgbm03" class="shop-item w-full bg-[#111] border border-gray-700 p-4 rounded-xl flex justify-between items-center hover:bg-white/5 transition-all">
+        <div class="text-left"><p class="text-[10px] font-black text-gray-400 uppercase">Aura Refill (Sm)</p><p class="text-xs font-black text-white">+10 AURA INSTANT</p></div>
+        <span class="text-[10px] font-black bg-gray-700 text-white px-3 py-1 rounded-full">$0.99</span>
+      </button>
+      <button data-type="pack" data-amt="100" data-link="https://buy.stripe.com/8x23cu4Ps3g2bLT09Dgbm00" class="shop-item w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-yellow-500/5 transition-all">
+        <div class="text-left"><p class="text-[10px] font-black text-yellow-500 uppercase">Aura Refill (Lg)</p><p class="text-xs font-black text-white">+100 AURA INSTANT</p></div>
+        <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$2.99</span>
+      </button>
+      <button data-type="unlock" data-amt="69" data-link="https://buy.stripe.com/00w6oGfu617UeY5bSlgbm04" class="shop-item w-full bg-[#1a0a10] border border-pink-900/40 p-4 rounded-xl flex justify-between items-center hover:bg-pink-500/10 transition-all">
+        <div class="text-left"><p class="text-[10px] font-black text-pink-500 uppercase">Special Unlock</p><p class="text-xs font-black text-white">KINK ROULETTE</p></div>
+        <span class="text-[10px] font-black bg-pink-600 text-white px-3 py-1 rounded-full">$1.49</span>
+      </button>
+    </div>
+  </div>
+
+  <div id="leaderboard-modal" class="central-modal">
+    <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button id="close-leaderboard" class="text-gray-500 text-xs">✕</button></div>
+    <div id="leaderboard-list" class="flex flex-col gap-2"></div>
+  </div>
+
+  <div id="suggest-modal" class="central-modal">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-xl font-black uppercase italic text-pink-600 flex items-center gap-2">Suggest <span class="text-[10px] bg-pink-600/20 px-2 py-0.5 rounded-full not-italic">LIVE</span></h2>
+      <button id="close-suggest" class="text-gray-500 text-xs">✕</button>
+    </div>
+    <p class="text-[10px] text-gray-500 uppercase font-black mb-4 tracking-tighter">Help us roast the world. Every submission is reviewed.</p>
+    <textarea id="suggest-input" rows="4" class="w-full bg-black border border-gray-800 rounded-xl p-4 text-sm text-white mb-4" placeholder="Type your spicy roast or toast here..."></textarea>
+    <button id="submit-suggest-btn" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest">Submit to Queue</button>
+  </div>
+
+  <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col">
+    <button id="sidebar-close" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
+    <div id="profile-link" class="flex items-center gap-3 mb-8 cursor-pointer group">
+      <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
+      <div class="text-left"><p id="username-display" class="font-bold text-sm text-white group-hover:text-pink-600 transition-colors">Guest</p><p class="text-[8px] uppercase text-gray-500 font-black">View Profile</p></div>
     </div>
 
-    <div id="shop-modal" class="central-modal" aria-hidden="true">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-black uppercase italic text-yellow-500">Shop</h2>
-            <div class="text-[10px] font-bold text-gray-500">Aura: <span id="shop-aura-display" class="text-white">20</span></div>
-            <button id="close-shop" class="text-gray-500 text-xs">✕</button>
+    <div id="login-container" class="mb-8 p-4 bg-gray-900/50 border border-gray-800 rounded-xl">
+      <p id="auth-status" class="text-[9px] font-black text-pink-600 uppercase mb-2 tracking-widest">Account Status</p>
+      <div id="logged-out-view" class="flex flex-col items-center justify-center space-y-4">
+        <h2 class="text-xl font-bold text-white">Sign in to sync your Aura</h2>
+        <div id="login-form" class="flex flex-col space-y-3 w-full max-w-xs">
+          <input id="email-input" type="email" placeholder="Enter your email" class="px-4 py-2 rounded bg-white/10 border border-white/20 text-center text-white">
+          <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold">Send Magic Link</button>
+          <p id="login-msg" class="text-xs text-gray-400 text-center hidden">Check your email for the login link!</p>
         </div>
-
-        <div class="space-y-3">
-            <button data-type="extension" data-amt="50" data-link="https://buy.stripe.com/8x2bJ0chU5oa4jr4pTgbm01" class="shop-item w-full bg-[#111] border border-blue-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-blue-500/5 transition-all">
-                <div class="text-left"><p class="text-[10px] font-black text-blue-500 uppercase">Aura Extension (Sm)</p><p class="text-xs font-black text-white">REFILL LIMIT 50</p></div>
-                <span class="text-[10px] font-black bg-blue-600 text-white px-3 py-1 rounded-full">$1.99</span>
-            </button>
-
-            <button data-type="extension" data-amt="100" data-link="https://buy.stripe.com/14A4gy2Hkg2O4jr7C5gbm02" class="shop-item w-full bg-[#111] border border-purple-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-purple-500/5 transition-all">
-                <div class="text-left"><p class="text-[10px] font-black text-purple-500 uppercase">Aura Extension (Lg)</p><p class="text-xs font-black text-white">REFILL LIMIT 100</p></div>
-                <span class="text-[10px] font-black bg-purple-600 text-white px-3 py-1 rounded-full">$4.99</span>
-            </button>
-
-            <button data-type="pack" data-amt="10" data-link="https://buy.stripe.com/cNi8wObdQg2O6rz3lPgbm03" class="shop-item w-full bg-[#111] border border-gray-700 p-4 rounded-xl flex justify-between items-center hover:bg-white/5 transition-all">
-                <div class="text-left"><p class="text-[10px] font-black text-gray-400 uppercase">Aura Refill (Sm)</p><p class="text-xs font-black text-white">+10 AURA INSTANT</p></div>
-                <span class="text-[10px] font-black bg-gray-700 text-white px-3 py-1 rounded-full">$0.99</span>
-            </button>
-
-            <button data-type="pack" data-amt="100" data-link="https://buy.stripe.com/8x23cu4Ps3g2bLT09Dgbm00" class="shop-item w-full bg-[#111] border border-yellow-900/30 p-4 rounded-xl flex justify-between items-center hover:bg-yellow-500/5 transition-all">
-                <div class="text-left"><p class="text-[10px] font-black text-yellow-500 uppercase">Aura Refill (Lg)</p><p class="text-xs font-black text-white">+100 AURA INSTANT</p></div>
-                <span class="text-[10px] font-black bg-yellow-600 text-black px-3 py-1 rounded-full">$2.99</span>
-            </button>
-
-            <button data-type="unlock" data-amt="69" data-link="https://buy.stripe.com/00w6oGfu617UeY5bSlgbm04" class="shop-item w-full bg-[#1a0a10] border border-pink-900/40 p-4 rounded-xl flex justify-between items-center hover:bg-pink-500/10 transition-all">
-                <div class="text-left"><p class="text-[10px] font-black text-pink-500 uppercase">Special Unlock</p><p class="text-xs font-black text-white">KINK ROULETTE</p></div>
-                <span class="text-[10px] font-black bg-pink-600 text-white px-3 py-1 rounded-full">$1.49</span>
-            </button>
-        </div>
+      </div>
+      <div id="logged-in-view" class="hidden">
+        <button id="logout-btn" class="w-full text-left px-4 py-2 hover:bg-white/10 text-red-400 flex items-center space-x-3"><span>Logout</span></button>
+      </div>
     </div>
 
-    <div id="leaderboard-modal" class="central-modal" aria-hidden="true">
-        <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-black uppercase italic text-pink-600">Leaderboard</h2><button id="close-leaderboard" class="text-gray-500 text-xs">✕</button></div>
-        <div id="leaderboard-list" class="flex flex-col gap-2"></div>
-    </div>
+    <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
+    <div id="pack-list" class="flex flex-col gap-2"></div>
 
-    <div id="suggest-modal" class="central-modal" aria-hidden="true">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-black uppercase italic text-pink-600 flex items-center gap-2">
-                Suggest <span class="text-[10px] bg-pink-600/20 px-2 py-0.5 rounded-full not-italic">LIVE</span>
-            </h2>
-            <button id="close-suggest" class="text-gray-500 text-xs">✕</button>
-        </div>
-        <p class="text-[10px] text-gray-500 uppercase font-black mb-4 tracking-tighter">Help us roast the world. Every submission is reviewed.</p>
+    <button id="open-suggest" class="w-full bg-pink-600/10 border border-pink-600/20 p-4 rounded-xl text-[10px] font-black uppercase mb-6 text-pink-500 hover:bg-pink-600/20 transition-all flex justify-between items-center">💡 Suggest a Phrase <span>→</span></button>
+  </aside>
 
-        <textarea id="suggest-input" class="w-full bg-black border border-gray-800 rounded-xl p-4 text-sm text-white focus:border-pink-600 outline-none mb-4 transition-colors" rows="4" placeholder="Type your spicy roast or toast here..."></textarea>
+  <div id="overlay" class="fixed inset-0 bg-black/80 hidden z-[45] backdrop-blur-sm"></div>
 
-        <button id="submit-suggest-btn" class="w-full bg-pink-600 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest active:scale-95 transition-all">
-            Submit to Queue
-        </button>
-    </div>
+  <script>
+    // Supabase config
+    const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
+    const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    <aside id="sidebar" class="sidebar fixed top-0 right-0 h-full w-80 bg-[#0a0a0a] border-l border-gray-800 p-6 flex flex-col" aria-hidden="true">
-        <button id="sidebar-close" class="text-gray-500 self-end mb-8 uppercase text-[10px] font-bold">Close ✕</button>
-        <div id="profile-link" class="flex items-center gap-3 mb-8 cursor-pointer group">
-            <img id="sidebar-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=guest" class="w-10 h-10 border border-pink-600 rounded-full object-cover">
-            <div class="text-left"><p id="username-display" class="font-bold text-sm text-white group-hover:text-pink-600 transition-colors">Guest</p><p class="text-[8px] uppercase text-gray-500 font-black">View Profile</p></div>
-        </div>
+    // App state
+    let currentUser = null;
+    let aura = 20;
+    let auraSoftLimit = 20;
+    let totalRoasts = 0;
+    let totalToasts = 0;
+    let currentMode = 'roast';
+    let currentLang = 'en-US';
+    let activePackId = 2;
+    let unlockedPacks = [];
+    let isLoaded = false;
 
-        <div id="login-container" class="mb-8 p-4 bg-gray-900/50 border border-gray-800 rounded-xl">
-            <p id="auth-status" class="text-[9px] font-black text-pink-600 uppercase mb-2 tracking-widest">Account Status</p>
-            <div id="logged-out-view" class="flex flex-col items-center justify-center space-y-4">
-                <h2 class="text-xl font-bold text-white">Sign in to sync your Aura</h2>
-                <div id="login-form" class="flex flex-col space-y-3 w-full max-w-xs">
-                    <input type="email" id="email-input" placeholder="Enter your email" class="px-4 py-2 rounded bg-white/10 border border-white/20 text-center text-white focus:outline-none focus:border-blue-500">
-                    <button id="login-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-bold transition flex items-center justify-center">
-                        <span>Send Magic Link</span>
-                    </button>
-                    <p id="login-msg" class="text-xs text-gray-400 text-center hidden">Check your email for the login link!</p>
-                </div>
-            </div>
-            <div id="logged-in-view" class="hidden">
-                <button id="logout-btn" class="w-full text-left px-4 py-2 hover:bg-white/10 text-red-400 flex items-center space-x-3">
-                    <span>Logout</span>
-                </button>
-            </div>
-        </div>
+    const packs = [
+      { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
+      { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
+      { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
+      { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" },
+      { id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast", nsfw: true }
+    ];
 
-        <h3 class="text-[10px] font-black uppercase text-pink-600 mb-4 tracking-widest">Select Pack</h3>
-        <div id="pack-list" class="flex flex-col gap-2"></div>
+    // ---------- Persistence ----------
+    async function saveToDB() {
+      if (!currentUser) {
+        localStorage.setItem('kutapp_state', JSON.stringify({ aura, auraSoftLimit, totalRoasts, totalToasts, unlockedPacks }));
+        console.log('Saved locally (no user).');
+        return;
+      }
+      try {
+        const payload = {
+          total_roasts: totalRoasts,
+          total_toasts: totalToasts,
+          aura: aura,
+          aura_limit: auraSoftLimit,
+          unlocked_packs: unlockedPacks
+        };
+        const { error } = await sb.from('profiles').update(payload).eq('id', currentUser.id);
+        if (error) console.error('saveToDB error', error);
+        else console.log('Saved profile to DB', payload);
+      } catch (err) {
+        console.error('saveToDB exception', err);
+      }
+    }
 
-        <button id="open-suggest" class="w-full bg-pink-600/10 border border-pink-600/20 p-4 rounded-xl text-[10px] font-black uppercase mb-6 text-pink-500 hover:bg-pink-600/20 transition-all flex justify-between items-center">
-            💡 Suggest a Phrase <span>→</span>
-        </button>
-    </aside>
-
-    <div id="overlay" class="fixed inset-0 bg-black/80 hidden z-[45] backdrop-blur-sm"></div>
-
-    <script>
-        // Supabase config (kept from original file)
-        const SUPABASE_URL = 'https://nhsadjdskqlptaqybbkj.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oc2FkamRza3FscHRhcXliYmtqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwNzQ0NTEsImV4cCI6MjA4MzY1MDQ1MX0.tVhMbNYC3kehbA6WfSakKD_AUNqxVkyaosuRjHHUon4';
-        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // App state
-        let currentUser = null;
-        let aura = 20;
-        let auraSoftLimit = 20;
-        let totalRoasts = 0;
-        let totalToasts = 0;
-        let currentMode = 'roast';
-        let currentLang = 'en-US';
-        let activePackId = 2;
-        let unlockedPacks = []; // in-memory array
-        let isLoaded = false;
-
-        // Packs
-        const packs = [
-            { id: 2, name: "Blunt English", lang: "en-US", emoji: "🇺🇸", type: "roast" },
-            { id: 1, name: "Rude Dutch", lang: "nl-NL", emoji: "🇳🇱", type: "roast" },
-            { id: 5, name: "Spicy Spanish", lang: "es-ES", emoji: "🇪🇸", type: "roast" },
-            { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" },
-            { id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast", nsfw: true }
-        ];
-
-        // ---------- Utility / Persistence ----------
-        async function saveToDB() {
-            if (!currentUser) {
-                // fallback: save to localStorage so progress isn't lost
-                localStorage.setItem('kutapp_state', JSON.stringify({
-                    aura, auraSoftLimit, totalRoasts, totalToasts, unlockedPacks
-                }));
-                return;
-            }
-
-            try {
-                const payload = {
-                    total_roasts: totalRoasts,
-                    total_toasts: totalToasts,
-                    aura: aura,
-                    aura_limit: auraSoftLimit,
-                    unlocked_packs: unlockedPacks // ensure snake_case for DB
-                };
-                const { error } = await sb.from('profiles').update(payload).eq('id', currentUser.id);
-                if (error) console.error('saveToDB error', error);
-                else console.log('Saved profile payload', payload);
-            } catch (err) {
-                console.error('saveToDB exception', err);
-            }
+    async function loadProfileFromDB(userId) {
+      try {
+        const { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
+        if (error) {
+          console.warn('Profile load error', error);
+          return;
         }
-
-        async function loadProfileFromDB(userId) {
-            try {
-                const { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
-                if (error) {
-                    console.warn('Profile load error', error);
-                    return;
-                }
-                if (data) {
-                    // restore persisted values if present (use snake_case fields)
-                    unlockedPacks = Array.isArray(data.unlocked_packs) ? data.unlocked_packs : (data.unlocked_packs ? JSON.parse(data.unlocked_packs) : []);
-                    auraSoftLimit = (typeof data.aura_limit === 'number') ? data.aura_limit : auraSoftLimit;
-                    aura = (typeof data.aura === 'number') ? data.aura : aura;
-                    totalRoasts = data.total_roasts || totalRoasts;
-                    totalToasts = data.total_toasts || totalToasts;
-                    document.getElementById('username-display').innerText = data.username || 'Guest';
-                    if (data.avatar_url) {
-                        document.getElementById('sidebar-avatar').src = data.avatar_url;
-                        document.getElementById('profile-img-modal').src = data.avatar_url;
-                    }
-                    console.log('Loaded profile unlocked_packs:', data.unlocked_packs);
-                }
-            } catch (err) {
-                console.error('loadProfileFromDB', err);
-            } finally {
-                updateStatsUI();
-            }
+        if (data) {
+          unlockedPacks = Array.isArray(data.unlocked_packs) ? data.unlocked_packs : (data.unlocked_packs ? JSON.parse(data.unlocked_packs) : []);
+          auraSoftLimit = (typeof data.aura_limit === 'number') ? data.aura_limit : auraSoftLimit;
+          aura = (typeof data.aura === 'number') ? data.aura : aura;
+          totalRoasts = data.total_roasts || totalRoasts;
+          totalToasts = data.total_toasts || totalToasts;
+          document.getElementById('username-display').innerText = data.username || 'Guest';
+          if (data.avatar_url) {
+            document.getElementById('sidebar-avatar').src = data.avatar_url;
+            document.getElementById('profile-img-modal').src = data.avatar_url;
+          }
+          console.log('Loaded profile from DB:', data);
         }
+      } catch (err) {
+        console.error('loadProfileFromDB', err);
+      } finally {
+        updateStatsUI();
+      }
+    }
 
-        function queuePendingPurchase(type, amt) {
-            const pending = JSON.parse(localStorage.getItem('kutapp_pending') || '[]');
-            pending.push({ type, amt, ts: Date.now() });
-            localStorage.setItem('kutapp_pending', JSON.stringify(pending));
+    function queuePendingPurchase(type, amt) {
+      const pending = JSON.parse(localStorage.getItem('kutapp_pending') || '[]');
+      pending.push({ type, amt, ts: Date.now() });
+      localStorage.setItem('kutapp_pending', JSON.stringify(pending));
+      console.log('Queued pending purchase', type, amt);
+    }
+
+    async function processPendingPurchases() {
+      const pending = JSON.parse(localStorage.getItem('kutapp_pending') || '[]');
+      if (!pending.length) return;
+      for (const p of pending) {
+        await applyPurchase(p.type, p.amt, true);
+      }
+      localStorage.removeItem('kutapp_pending');
+      console.log('Processed pending purchases');
+    }
+
+    // ---------- Stripe redirect handling ----------
+    async function handleStripeRedirectParams() {
+      try {
+        // If the user was redirected back from Stripe with a magic-link or purchase params,
+        // Supabase may need to parse the URL to create a session.
+        // getSessionFromUrl will parse auth params if present.
+        await sb.auth.getSessionFromUrl().catch(() => {});
+      } catch (e) {
+        console.warn('getSessionFromUrl error (ignored)', e);
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const type = params.get('type');
+      const amt = params.get('amt') ? parseInt(params.get('amt')) : null;
+      if (!type || !amt) return;
+
+      if (!currentUser) {
+        queuePendingPurchase(type, amt);
+        history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
+      await applyPurchase(type, amt, true);
+      history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    async function applyPurchase(type, amt, fromStripe = false) {
+      if (type === 'extension') {
+        auraSoftLimit = amt;
+        aura = Math.max(aura, auraSoftLimit);
+        await saveToDB();
+        confetti({ particleCount: 40, spread: 80, colors: ['#fbbf24', '#ffffff'] });
+        alert(`Aura limit updated to ${amt}!`);
+      } else if (type === 'pack' || type === 'unlock') {
+        const packId = amt;
+        const packExists = packs.some(p => p.id === packId);
+        if (packExists) {
+          if (!unlockedPacks.includes(packId)) unlockedPacks.push(packId);
+          await saveToDB();
+          confetti({ particleCount: 30, spread: 60, colors: ['#db2777'] });
+          alert('Pack unlocked!');
+        } else {
+          aura = Math.min(auraSoftLimit + 500, aura + amt);
+          await saveToDB();
+          alert('Aura refilled!');
         }
+      } else {
+        console.warn('Unknown purchase type', type, amt);
+      }
+      updateStatsUI();
+    }
 
-        async function processPendingPurchases() {
-            const pending = JSON.parse(localStorage.getItem('kutapp_pending') || '[]');
-            if (!pending.length) return;
-            for (const p of pending) {
-                await applyPurchase(p.type, p.amt, true);
-            }
-            localStorage.removeItem('kutapp_pending');
+    // ---------- Auth ----------
+    async function sendMagicLink() {
+      const email = document.getElementById('email-input').value.trim();
+      const btn = document.getElementById('login-btn');
+      const msg = document.getElementById('login-msg');
+      if (!email) return alert('Please enter your email!');
+      btn.disabled = true;
+      btn.innerText = 'Sending...';
+      try {
+        const { error } = await sb.auth.signInWithOtp({
+          email,
+          options: { emailRedirectTo: window.location.origin }
+        });
+        if (error) {
+          alert('Error: ' + error.message);
+          btn.disabled = false;
+          btn.innerText = 'Send Magic Link';
+        } else {
+          btn.classList.add('hidden');
+          msg.classList.remove('hidden');
+          alert('Success! Check your email and click the link to log in.');
         }
+      } catch (err) {
+        console.error('sendMagicLink', err);
+        btn.disabled = false;
+        btn.innerText = 'Send Magic Link';
+      }
+    }
 
-        // ---------- Stripe redirect handling ----------
-        async function handleStripeRedirectParams() {
-            const params = new URLSearchParams(window.location.search);
-            const type = params.get('type');
-            const amt = params.get('amt') ? parseInt(params.get('amt')) : null;
-            if (!type || !amt) return;
+    async function logout() {
+      try {
+        await sb.auth.signOut();
+        console.log('Signed out');
+      } catch (err) {
+        console.warn('signOut error', err);
+      } finally {
+        currentUser = null;
+        location.href = window.location.origin;
+      }
+    }
 
-            // If user not logged in, queue and return
-            if (!currentUser) {
-                queuePendingPurchase(type, amt);
-                history.replaceState({}, document.title, window.location.pathname);
-                return;
-            }
+    // ---------- UI helpers ----------
+    function openModal(id) {
+      document.getElementById('overlay').classList.remove('hidden');
+      const modal = document.getElementById(id);
+      if (modal) modal.classList.add('active');
+    }
+    function closeAllModals() {
+      document.getElementById('overlay').classList.add('hidden');
+      document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active'));
+    }
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('open');
+    }
 
-            // apply immediately
-            await applyPurchase(type, amt, true);
-            history.replaceState({}, document.title, window.location.pathname);
+    // ---------- Packs rendering ----------
+    function renderPacks() {
+      const list = document.getElementById('pack-list');
+      list.innerHTML = '';
+      packs.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'pack-card';
+        if (activePackId === p.id) card.classList.add('active');
+        if (p.type !== currentMode) {
+          card.classList.add('opacity-20');
+          card.style.filter = 'grayscale(100%)';
+          card.style.cursor = 'not-allowed';
+        } else {
+          card.style.cursor = 'pointer';
         }
+        const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
+        card.innerHTML = `<span class="text-[10px] font-black uppercase">${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}</span>`;
+        card.addEventListener('click', () => {
+          if (p.type !== currentMode) return;
+          if (isLocked) { openModal('shop-modal'); return; }
+          selectPack(p.id, p.lang);
+        });
+        list.appendChild(card);
+      });
+    }
 
-        async function applyPurchase(type, amt, fromStripe = false) {
-            if (type === 'extension') {
-                auraSoftLimit = amt;
-                aura = Math.max(aura, auraSoftLimit);
-                await saveToDB();
-                confetti({ particleCount: 40, spread: 80, colors: ['#fbbf24', '#ffffff'] });
-                alert(`Aura limit updated to ${amt}!`);
-            } else if (type === 'pack' || type === 'unlock') {
-                const packId = amt;
-                const packExists = packs.some(p => p.id === packId);
-                if (packExists) {
-                    if (!unlockedPacks.includes(packId)) unlockedPacks.push(packId);
-                    await saveToDB();
-                    confetti({ particleCount: 30, spread: 60, colors: ['#db2777'] });
-                    alert('Pack unlocked!');
-                } else {
-                    // fallback: treat as aura refill amount
-                    aura = Math.min(auraSoftLimit + 500, aura + amt);
-                    await saveToDB();
-                    alert('Aura refilled!');
-                }
-            } else {
-                console.warn('Unknown purchase type', type, amt);
-            }
-            updateStatsUI();
+    function selectPack(id, lang) {
+      const pack = packs.find(p => p.id === id);
+      if (!pack) return;
+      if (pack.nsfw && !localStorage.getItem('age_verified')) {
+        const confirmed = confirm("🔞 NSFW CONTENT: This pack is intended for adults. Are you 18 or older?");
+        if (!confirmed) return;
+        localStorage.setItem('age_verified', 'true');
+      }
+      activePackId = id;
+      currentLang = lang;
+      updateStatsUI();
+    }
+
+    // ---------- Action ----------
+    async function triggerAction() {
+      const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
+      const targetId = (currentMode === 'toast') ? 10 : activePackId;
+
+      if (currentMode === 'roast') {
+        if (aura < 1) return openModal('shop-modal');
+        aura -= 1; totalRoasts++;
+      } else {
+        if (aura >= auraSoftLimit) return alert('Aura Full!');
+        aura = Math.min(auraSoftLimit + 500, aura + 0.25); totalToasts++;
+        confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff'] });
+      }
+
+      try {
+        const { data, error } = await sb.from(table).select('*').eq('pack_id', targetId);
+        if (error) {
+          console.error('fetch phrase error', error);
+          document.getElementById('message').innerText = 'CONTENT MISSING';
+        } else if (data && data.length > 0) {
+          const item = data[Math.floor(Math.random() * data.length)];
+          document.getElementById('message').innerText = item.content;
+          document.getElementById('subtext').innerText = item.translation || '';
+          document.getElementById('action-row').style.opacity = '1';
+        } else {
+          console.log('No phrases found for pack_id', targetId, 'table', table);
+          document.getElementById('message').innerText = 'CONTENT MISSING';
         }
+      } catch (err) {
+        console.error('triggerAction error', err);
+        document.getElementById('message').innerText = 'CONTENT MISSING';
+      }
 
-        // ---------- Auth ----------
-        async function sendMagicLink() {
-            const email = document.getElementById('email-input').value.trim();
-            const btn = document.getElementById('login-btn');
-            const msg = document.getElementById('login-msg');
-            if (!email) return alert('Please enter your email!');
-            btn.disabled = true;
-            btn.innerText = 'Sending...';
-            try {
-                const { error } = await sb.auth.signInWithOtp({
-                    email,
-                    options: { emailRedirectTo: window.location.origin }
-                });
-                if (error) {
-                    alert('Error: ' + error.message);
-                    btn.disabled = false;
-                    btn.innerText = 'Send Magic Link';
-                } else {
-                    btn.classList.add('hidden');
-                    msg.classList.remove('hidden');
-                    alert('Success! Check your email and click the link to log in.');
-                }
-            } catch (err) {
-                console.error('sendMagicLink', err);
-                btn.disabled = false;
-                btn.innerText = 'Send Magic Link';
-            }
+      updateStatsUI();
+      await saveToDB();
+    }
+
+    // ---------- Profile & avatar ----------
+    async function updateProfile() {
+      const newUsername = document.getElementById('username-input').value.trim();
+      if (!newUsername) return alert('Please enter a username!');
+      if (!currentUser) return alert('Please sign in first.');
+      const currentAvatarUrl = document.getElementById('profile-img-modal').src;
+      try {
+        const { error } = await sb.from('profiles').update({ username: newUsername, avatar_url: currentAvatarUrl }).eq('id', currentUser.id);
+        if (error) { console.error('Profile Update Error:', error); alert('Error: ' + error.message); }
+        else {
+          document.getElementById('username-display').innerText = newUsername;
+          await saveToDB();
+          alert('Profile Updated! ✅');
+          closeAllModals();
         }
+      } catch (err) { console.error('updateProfile', err); }
+    }
 
-        async function logout() {
-            try {
-                await sb.auth.signOut();
-            } catch (err) {
-                console.warn('signOut error', err);
-            } finally {
-                currentUser = null;
-                location.href = window.location.origin;
-            }
+    async function uploadAvatarFile(file) {
+      if (!file || !currentUser) return;
+      const path = `avatars/${currentUser.id}.png`;
+      try {
+        const { error: uploadError } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+        if (uploadError) { console.error('uploadAvatar error', uploadError); return; }
+        const { data } = sb.storage.from('avatars').getPublicUrl(path);
+        const publicUrl = data.publicUrl;
+        await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
+        document.getElementById('profile-img-modal').src = publicUrl;
+        document.getElementById('sidebar-avatar').src = publicUrl;
+      } catch (err) { console.error('uploadAvatarFile', err); }
+    }
+
+    // ---------- Leaderboard ----------
+    async function fetchLeaderboard() {
+      try {
+        const { data, error } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
+        if (error) { console.error('fetchLeaderboard error', error); return; }
+        if (!data || data.length === 0) {
+          document.getElementById('leaderboard-list').innerHTML = '<div class="p-3 text-sm text-gray-400">No leaderboard data yet</div>';
+          console.log('Leaderboard empty or no permission to read profiles.');
+          return;
         }
+        document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
+          <div class="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-gray-800">
+            <span class="text-xs font-bold text-gray-400">#${i+1} <span class="text-white ml-2">${u.username || 'Anon'}</span></span>
+            <span class="text-[10px] font-black bg-pink-600/20 text-pink-600 px-2 py-0.5 rounded-full">${(u.total_roasts || 0) + (u.total_toasts || 0)}</span>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error('fetchLeaderboard', err);
+      }
+    }
 
-        // ---------- UI helpers ----------
-        function openModal(id) {
-            document.getElementById('overlay').classList.remove('hidden');
-            const modal = document.getElementById(id);
-            if (modal) modal.classList.add('active');
+    // ---------- Share card ----------
+    function generateShareCard() {
+      const canvas = document.getElementById('shareCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#050505';
+      ctx.fillRect(0, 0, 1080, 1080);
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.font = '900 80px Inter';
+      const msg = document.getElementById('message').innerText;
+      const words = msg.split(' ');
+      let line = '', y = 450;
+      words.forEach(word => {
+        if ((line + word).length > 15) { ctx.fillText(line.toUpperCase(), 540, y); line = word + ' '; y += 110; }
+        else { line += word + ' '; }
+      });
+      ctx.fillText(line.toUpperCase(), 540, y);
+      ctx.fillStyle = currentMode === 'roast' ? '#db2777' : '#fbbf24';
+      ctx.font = 'italic 900 60px Inter';
+      ctx.fillText('KUTAPP', 540, 1000);
+      const link = document.createElement('a');
+      link.download = `KutApp_${currentMode}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    // ---------- Suggestions ----------
+    let isSuggesting = false;
+    async function submitSuggestion() {
+      const input = document.getElementById('suggest-input');
+      const content = input.value.trim();
+      const btn = document.getElementById('submit-suggest-btn');
+      if (!content || content.length < 5 || isSuggesting) return;
+      isSuggesting = true;
+      btn.innerText = 'Processing...';
+      btn.classList.add('opacity-50', 'cursor-not-allowed');
+      try {
+        const payload = { content, status: 'pending' };
+        if (currentUser) payload.user_id = currentUser.id;
+        const { error } = await sb.from('suggestions').insert([payload]);
+        if (error) throw error;
+        input.value = '';
+        btn.innerText = 'Submitted!';
+        confetti({ particleCount: 20, spread: 50, colors: ['#db2777'] });
+        setTimeout(() => { isSuggesting = false; btn.innerText = 'Submit to Queue'; btn.classList.remove('opacity-50', 'cursor-not-allowed'); closeAllModals(); }, 30000);
+      } catch (err) {
+        console.error('submitSuggestion', err);
+        isSuggesting = false;
+        btn.innerText = 'Submit to Queue';
+        btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        alert('Error submitting suggestion.');
+      }
+    }
+
+    // ---------- UI update ----------
+    function updateStatsUI() {
+      document.getElementById('counter').innerText = (totalRoasts + totalToasts);
+      const auraDisplay = document.getElementById('aura-text');
+      if (aura >= auraSoftLimit) {
+        auraDisplay.innerText = Math.floor(aura);
+        auraDisplay.classList.add('text-yellow-500');
+        auraDisplay.classList.remove('text-pink-600');
+      } else {
+        auraDisplay.innerText = `${aura.toFixed(1)}/${auraSoftLimit}`;
+        auraDisplay.classList.remove('text-yellow-500');
+        auraDisplay.classList.add('text-pink-600');
+      }
+      document.getElementById('shop-aura-display').innerText = aura.toFixed(1);
+      const prog = document.getElementById('aura-progress');
+      const percentage = Math.min(100, (aura / auraSoftLimit) * 100);
+      prog.style.width = `${percentage}%`;
+      prog.style.backgroundColor = aura >= auraSoftLimit ? '#eab308' : (currentMode === 'roast' ? '#db2777' : '#fbbf24');
+      document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
+      document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
+      document.getElementById('zen-prog').innerText = `${totalToasts}/500`;
+      document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
+      renderPacks();
+    }
+
+    // ---------- Init ----------
+    function setMode(mode) {
+      currentMode = mode;
+      activePackId = (mode === 'toast') ? 10 : 2;
+      document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
+      document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
+      document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
+      updateStatsUI();
+    }
+
+    async function init() {
+      // Wire UI
+      document.getElementById('actionBtn').addEventListener('click', triggerAction);
+      document.getElementById('roastMode').addEventListener('click', () => setMode('roast'));
+      document.getElementById('toastMode').addEventListener('click', () => setMode('toast'));
+      document.getElementById('shareCardBtn').addEventListener('click', generateShareCard);
+      document.getElementById('speakBtn').addEventListener('click', () => {});
+      document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+      document.getElementById('sidebar-close').addEventListener('click', toggleSidebar);
+      document.getElementById('profile-link').addEventListener('click', () => openModal('profile-modal'));
+      document.getElementById('close-profile').addEventListener('click', closeAllModals);
+      document.getElementById('shop-btn').addEventListener('click', () => openModal('shop-modal'));
+      document.getElementById('leaderboard-btn').addEventListener('click', () => { openModal('leaderboard-modal'); fetchLeaderboard(); });
+      document.getElementById('open-suggest').addEventListener('click', () => openModal('suggest-modal'));
+      document.getElementById('close-shop').addEventListener('click', closeAllModals);
+      document.getElementById('close-leaderboard').addEventListener('click', closeAllModals);
+      document.getElementById('close-suggest').addEventListener('click', closeAllModals);
+      document.getElementById('submit-suggest-btn').addEventListener('click', submitSuggestion);
+      document.getElementById('login-btn').addEventListener('click', sendMagicLink);
+      document.getElementById('logout-btn').addEventListener('click', logout);
+      document.getElementById('save-profile-btn').addEventListener('click', updateProfile);
+      document.getElementById('avatar-upload').addEventListener('change', (e) => uploadAvatarFile(e.target.files[0]));
+      document.getElementById('overlay').addEventListener('click', closeAllModals);
+
+      // shop item clicks
+      document.querySelectorAll('.shop-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const type = btn.getAttribute('data-type');
+          const amt = parseInt(btn.getAttribute('data-amt'));
+          const link = btn.getAttribute('data-link');
+          if (type === 'unlock') localStorage.setItem('pending_unlock', amt);
+          window.location.href = `${link}?type=${type}&amt=${amt}`;
+        });
+      });
+
+      // 1) Try to parse any auth session from URL (magic link redirect)
+      try {
+        await sb.auth.getSessionFromUrl().catch(() => {});
+      } catch (e) {
+        console.warn('getSessionFromUrl error (ignored)', e);
+      }
+
+      // 2) Immediately fetch current session (so UI updates synchronously)
+      try {
+        const { data } = await sb.auth.getSession();
+        const session = data?.session ?? null;
+        if (session && session.user) {
+          currentUser = session.user;
+          console.log('Initial session found', currentUser);
+          document.getElementById('logged-out-view').classList.add('hidden');
+          document.getElementById('logged-in-view').classList.remove('hidden');
+          await loadProfileFromDB(currentUser.id);
+          await processPendingPurchases();
+          const pendingUnlock = localStorage.getItem('pending_unlock');
+          if (pendingUnlock) { await applyPurchase('unlock', parseInt(pendingUnlock), true); localStorage.removeItem('pending_unlock'); }
+        } else {
+          console.log('No initial session');
+          // restore local state if present
+          const saved = JSON.parse(localStorage.getItem('kutapp_state') || 'null');
+          if (saved) {
+            aura = saved.aura || aura;
+            auraSoftLimit = saved.auraSoftLimit || auraSoftLimit;
+            totalRoasts = saved.totalRoasts || totalRoasts;
+            totalToasts = saved.totalToasts || totalToasts;
+            unlockedPacks = saved.unlockedPacks || unlockedPacks;
+          }
         }
-        function closeAllModals() {
-            document.getElementById('overlay').classList.add('hidden');
-            document.querySelectorAll('.central-modal').forEach(m => m.classList.remove('active'));
+      } catch (err) {
+        console.error('Error getting initial session', err);
+      }
+
+      // 3) Auth state listener for runtime changes
+      sb.auth.onAuthStateChange(async (event, session) => {
+        console.log('Auth event', event, session);
+        if (session && session.user) {
+          currentUser = session.user;
+          document.getElementById('logged-out-view').classList.add('hidden');
+          document.getElementById('logged-in-view').classList.remove('hidden');
+          await loadProfileFromDB(currentUser.id);
+          await processPendingPurchases();
+          const pendingUnlock = localStorage.getItem('pending_unlock');
+          if (pendingUnlock) { await applyPurchase('unlock', parseInt(pendingUnlock), true); localStorage.removeItem('pending_unlock'); }
+        } else {
+          currentUser = null;
+          document.getElementById('logged-out-view').classList.remove('hidden');
+          document.getElementById('logged-in-view').classList.add('hidden');
         }
+        updateStatsUI();
+      });
 
-        function toggleSidebar() {
-            const sbEl = document.getElementById('sidebar');
-            sbEl.classList.toggle('open');
-        }
+      // 4) Handle stripe redirect params (purchase flow)
+      setTimeout(() => handleStripeRedirectParams(), 300);
 
-        // ---------- Packs rendering (DOM-based) ----------
-        function renderPacks() {
-            const list = document.getElementById('pack-list');
-            list.innerHTML = '';
-            packs.forEach(p => {
-                const card = document.createElement('div');
-                card.className = 'pack-card';
-                if (activePackId === p.id) card.classList.add('active');
-                if (p.type !== currentMode) {
-                    card.classList.add('opacity-20');
-                    card.style.filter = 'grayscale(100%)';
-                    card.style.cursor = 'not-allowed';
-                } else {
-                    card.style.cursor = 'pointer';
-                }
+      // initial render
+      renderPacks();
+      updateStatsUI();
+      isLoaded = true;
+      console.log('App initialized');
+    }
 
-                const isLocked = p.nsfw && !unlockedPacks.includes(p.id);
-                card.innerHTML = `<span class="text-[10px] font-black uppercase">${p.emoji} ${p.name} ${isLocked ? '🔒' : ''}</span>`;
-
-                card.addEventListener('click', () => {
-                    if (p.type !== currentMode) return;
-                    if (isLocked) {
-                        openModal('shop-modal');
-                        return;
-                    }
-                    selectPack(p.id, p.lang);
-                });
-
-                list.appendChild(card);
-            });
-        }
-
-        function selectPack(id, lang) {
-            const pack = packs.find(p => p.id === id);
-            if (!pack) return;
-            if (pack.nsfw && !localStorage.getItem('age_verified')) {
-                const confirmed = confirm("🔞 NSFW CONTENT: This pack is intended for adults. It contains spicy, directional bedroom prompts. Are you 18 or older?");
-                if (!confirmed) return;
-                localStorage.setItem('age_verified', 'true');
-            }
-            activePackId = id;
-            currentLang = lang;
-            updateStatsUI();
-        }
-
-        // ---------- Action (roast/toast) ----------
-        async function triggerAction() {
-            const table = (currentMode === 'roast') ? 'phrases' : 'affirmations';
-            const targetId = (currentMode === 'toast') ? 10 : activePackId;
-
-            if (currentMode === 'roast') {
-                if (aura < 1) return openModal('shop-modal');
-                aura -= 1; totalRoasts++;
-            } else {
-                if (aura >= auraSoftLimit) return alert('Aura Full!');
-                aura = Math.min(auraSoftLimit + 500, aura + 0.25); totalToasts++;
-                confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff'] });
-            }
-
-            try {
-                const { data, error } = await sb.from(table).select('*').eq('pack_id', targetId);
-                if (error) {
-                    console.error('fetch phrase error', error);
-                    document.getElementById('message').innerText = 'CONTENT MISSING';
-                } else if (data && data.length > 0) {
-                    const item = data[Math.floor(Math.random() * data.length)];
-                    document.getElementById('message').innerText = item.content;
-                    document.getElementById('subtext').innerText = item.translation || '';
-                    document.getElementById('action-row').style.opacity = '1';
-                } else {
-                    document.getElementById('message').innerText = 'CONTENT MISSING';
-                }
-            } catch (err) {
-                console.error('triggerAction error', err);
-                document.getElementById('message').innerText = 'CONTENT MISSING';
-            }
-
-            updateStatsUI();
-            await saveToDB();
-        }
-
-        // ---------- Profile update & avatar upload ----------
-        async function updateProfile() {
-            const usernameInput = document.getElementById('username-input');
-            const newUsername = usernameInput.value.trim();
-            if (!newUsername) return alert('Please enter a username!');
-            if (!currentUser) return alert('Please sign in first.');
-
-            const currentAvatarUrl = document.getElementById('profile-img-modal').src;
-
-            try {
-                const { error } = await sb.from('profiles').update({
-                    username: newUsername,
-                    avatar_url: currentAvatarUrl
-                }).eq('id', currentUser.id);
-
-                if (error) {
-                    console.error('Profile Update Error:', error);
-                    alert('Error: ' + error.message);
-                } else {
-                    document.getElementById('username-display').innerText = newUsername;
-                    await saveToDB();
-                    alert('Profile Updated! ✅');
-                    closeAllModals();
-                }
-            } catch (err) {
-                console.error('updateProfile', err);
-            }
-        }
-
-        async function uploadAvatarFile(file) {
-            if (!file || !currentUser) return;
-            const path = `avatars/${currentUser.id}.png`;
-            try {
-                const { error: uploadError } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
-                if (uploadError) {
-                    console.error('uploadAvatar error', uploadError);
-                    return;
-                }
-                const { data } = sb.storage.from('avatars').getPublicUrl(path);
-                const publicUrl = data.publicUrl;
-                await sb.from('profiles').update({ avatar_url: publicUrl }).eq('id', currentUser.id);
-                document.getElementById('profile-img-modal').src = publicUrl;
-                document.getElementById('sidebar-avatar').src = publicUrl;
-            } catch (err) {
-                console.error('uploadAvatarFile', err);
-            }
-        }
-
-        // ---------- Leaderboard ----------
-        async function fetchLeaderboard() {
-            try {
-                const { data } = await sb.from('profiles').select('username, total_roasts, total_toasts').order('total_roasts', { ascending: false }).limit(10);
-                if (data) {
-                    document.getElementById('leaderboard-list').innerHTML = data.map((u, i) => `
-                        <div class="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-gray-800">
-                            <span class="text-xs font-bold text-gray-400">#${i+1} <span class="text-white ml-2">${u.username || 'Anon'}</span></span>
-                            <span class="text-[10px] font-black bg-pink-600/20 text-pink-600 px-2 py-0.5 rounded-full">${(u.total_roasts || 0) + (u.total_toasts || 0)}</span>
-                        </div>
-                    `).join('');
-                }
-            } catch (err) {
-                console.error('fetchLeaderboard', err);
-            }
-        }
-
-        // ---------- Share card ----------
-        function generateShareCard() {
-            const canvas = document.getElementById('shareCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#050505';
-            ctx.fillRect(0, 0, 1080, 1080);
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.font = '900 80px Inter';
-            const msg = document.getElementById('message').innerText;
-            const words = msg.split(' ');
-            let line = '', y = 450;
-            words.forEach(word => {
-                if ((line + word).length > 15) {
-                    ctx.fillText(line.toUpperCase(), 540, y); line = word + ' '; y += 110;
-                } else { line += word + ' '; }
-            });
-            ctx.fillText(line.toUpperCase(), 540, y);
-            ctx.fillStyle = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-            ctx.font = 'italic 900 60px Inter';
-            ctx.fillText('KUTAPP', 540, 1000);
-            const link = document.createElement('a');
-            link.download = `KutApp_${currentMode}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-        }
-
-        // ---------- Suggestions ----------
-        let isSuggesting = false;
-        async function submitSuggestion() {
-            const input = document.getElementById('suggest-input');
-            const content = input.value.trim();
-            const btn = document.getElementById('submit-suggest-btn');
-            if (!content || content.length < 5 || isSuggesting) return;
-            isSuggesting = true;
-            btn.innerText = 'Processing...';
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
-
-            try {
-                const payload = { content: content, status: 'pending' };
-                if (currentUser) payload.user_id = currentUser.id;
-                const { error } = await sb.from('suggestions').insert([payload]);
-                if (error) throw error;
-                input.value = '';
-                btn.innerText = 'Submitted!';
-                confetti({ particleCount: 20, spread: 50, colors: ['#db2777'] });
-                setTimeout(() => {
-                    isSuggesting = false;
-                    btn.innerText = 'Submit to Queue';
-                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                    closeAllModals();
-                }, 30000);
-            } catch (err) {
-                console.error('submitSuggestion', err);
-                isSuggesting = false;
-                btn.innerText = 'Submit to Queue';
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                alert('Error submitting suggestion.');
-            }
-        }
-
-        // ---------- UI update ----------
-        function updateStatsUI() {
-            document.getElementById('counter').innerText = (totalRoasts + totalToasts);
-            const auraDisplay = document.getElementById('aura-text');
-            if (aura >= auraSoftLimit) {
-                auraDisplay.innerText = Math.floor(aura);
-                auraDisplay.classList.add('text-yellow-500');
-                auraDisplay.classList.remove('text-pink-600');
-            } else {
-                auraDisplay.innerText = `${aura.toFixed(1)}/${auraSoftLimit}`;
-                auraDisplay.classList.remove('text-yellow-500');
-                auraDisplay.classList.add('text-pink-600');
-            }
-            document.getElementById('shop-aura-display').innerText = aura.toFixed(1);
-            const prog = document.getElementById('aura-progress');
-            const percentage = Math.min(100, (aura / auraSoftLimit) * 100);
-            prog.style.width = `${percentage}%`;
-            if (aura >= auraSoftLimit) {
-                prog.style.backgroundColor = '#eab308';
-            } else {
-                prog.style.backgroundColor = currentMode === 'roast' ? '#db2777' : '#fbbf24';
-            }
-            document.getElementById('skin-prog').innerText = `${totalRoasts}/1000`;
-            document.getElementById('skin-fill').style.width = `${Math.min(100, (totalRoasts/1000)*100)}%`;
-            document.getElementById('zen-prog').innerText = `${totalToasts}/500`;
-            document.getElementById('zen-fill').style.width = `${Math.min(100, (totalToasts/500)*100)}%`;
-            renderPacks();
-        }
-
-        // ---------- Initialization ----------
-        function setMode(mode) {
-            currentMode = mode;
-            if (mode === 'toast') activePackId = 10;
-            else activePackId = 2;
-            document.getElementById('roastMode').className = `vibe-btn ${mode === 'roast' ? 'active-roast' : ''}`;
-            document.getElementById('toastMode').className = `vibe-btn ${mode === 'toast' ? 'active-toast' : ''}`;
-            document.getElementById('actionBtn').innerText = mode === 'roast' ? 'Get Roasted' : 'Get Toasted';
-            updateStatsUI();
-        }
-
-        async function init() {
-            // Wire up UI event listeners
-            document.getElementById('actionBtn').addEventListener('click', triggerAction);
-            document.getElementById('roastMode').addEventListener('click', () => setMode('roast'));
-            document.getElementById('toastMode').addEventListener('click', () => setMode('toast'));
-            document.getElementById('shareCardBtn').addEventListener('click', generateShareCard);
-            document.getElementById('speakBtn').addEventListener('click', () => { /* placeholder for TTS */ });
-            document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
-            document.getElementById('sidebar-close').addEventListener('click', toggleSidebar);
-            document.getElementById('profile-link').addEventListener('click', () => openModal('profile-modal'));
-            document.getElementById('close-profile').addEventListener('click', closeAllModals);
-            document.getElementById('shop-btn').addEventListener('click', () => openModal('shop-modal'));
-            document.getElementById('leaderboard-btn').addEventListener('click', () => { openModal('leaderboard-modal'); fetchLeaderboard(); });
-            document.getElementById('open-suggest').addEventListener('click', () => openModal('suggest-modal'));
-            document.getElementById('close-shop').addEventListener('click', closeAllModals);
-            document.getElementById('close-leaderboard').addEventListener('click', closeAllModals);
-            document.getElementById('close-suggest').addEventListener('click', closeAllModals);
-            document.getElementById('submit-suggest-btn').addEventListener('click', submitSuggestion);
-            document.getElementById('login-btn').addEventListener('click', sendMagicLink);
-            document.getElementById('logout-btn').addEventListener('click', logout);
-            document.getElementById('save-profile-btn').addEventListener('click', updateProfile);
-            document.getElementById('avatar-upload').addEventListener('change', (e) => {
-                const file = e.target.files[0];
-                uploadAvatarFile(file);
-            });
-
-            // shop item clicks
-            document.querySelectorAll('.shop-item').forEach(btn => {
-                btn.addEventListener('click', (ev) => {
-                    const type = btn.getAttribute('data-type');
-                    const amt = parseInt(btn.getAttribute('data-amt'));
-                    const link = btn.getAttribute('data-link');
-                    if (type === 'unlock') {
-                        localStorage.setItem('pending_unlock', amt);
-                    }
-                    window.location.href = `${link}?type=${type}&amt=${amt}`;
-                });
-            });
-
-            // overlay click closes modals
-            document.getElementById('overlay').addEventListener('click', closeAllModals);
-
-            // Auth state listener
-            sb.auth.onAuthStateChange(async (event, session) => {
-                if (session && session.user) {
-                    currentUser = session.user;
-                    document.getElementById('logged-out-view').classList.add('hidden');
-                    document.getElementById('logged-in-view').classList.remove('hidden');
-                    await loadProfileFromDB(currentUser.id);
-                    await processPendingPurchases();
-                    const pendingUnlock = localStorage.getItem('pending_unlock');
-                    if (pendingUnlock) {
-                        await applyPurchase('unlock', parseInt(pendingUnlock), true);
-                        localStorage.removeItem('pending_unlock');
-                    }
-                } else {
-                    currentUser = null;
-                    document.getElementById('logged-out-view').classList.remove('hidden');
-                    document.getElementById('logged-in-view').classList.add('hidden');
-                    const saved = JSON.parse(localStorage.getItem('kutapp_state') || 'null');
-                    if (saved) {
-                        aura = saved.aura || aura;
-                        auraSoftLimit = saved.auraSoftLimit || auraSoftLimit;
-                        totalRoasts = saved.totalRoasts || totalRoasts;
-                        totalToasts = saved.totalToasts || totalToasts;
-                        unlockedPacks = saved.unlockedPacks || unlockedPacks;
-                    }
-                }
-                updateStatsUI();
-            });
-
-            // Slight delay to allow auth listener to initialize session if present
-            setTimeout(() => handleStripeRedirectParams(), 500);
-
-            // initial render
-            renderPacks();
-            updateStatsUI();
-            isLoaded = true;
-        }
-
-        // Start app
-        init();
-    </script>
+    // start
+    init();
+  </script>
 </body>
 </html>
