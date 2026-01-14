@@ -495,7 +495,34 @@
         }
 
         async function init() {
-            // 1. Session & Auth Check
+            // 1. AUTH LISTENER: Catches the Magic Link login immediately
+            sb.auth.onAuthStateChange(async (event, session) => {
+                if (session && session.user) {
+                    currentUser = session.user;
+                    document.getElementById('logged-out-view').classList.add('hidden');
+                    document.getElementById('logged-in-view').classList.remove('hidden');
+                    
+                    // Pull the latest data for the logged-in user
+                    const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
+                    if (profile) {
+                        aura = profile.aura_balance ?? 20;
+                        auraSoftLimit = profile.aura_soft_limit ?? 20;
+                        totalRoasts = profile.total_roasts || 0;
+                        totalToasts = profile.total_toasts || 0;
+                        unlockedPacks = profile.unlocked_packs || [];
+                        document.getElementById('username-display').innerText = profile.username || "User";
+                        if (profile.avatar_url) document.getElementById('sidebar-avatar').src = profile.avatar_url;
+                        
+                        updateStatsUI();
+                        renderPacks();
+                    }
+                } else if (event === 'SIGNED_OUT') {
+                    currentUser = null;
+                    location.reload(); // Refresh to clear state on logout
+                }
+            });
+
+            // 2. INITIAL SESSION CHECK
             const { data: { session } } = await sb.auth.getSession();
             if (session) {
                 currentUser = session.user;
@@ -516,19 +543,17 @@
                 }
             }
 
-            // 2. Process Purchase (Confetti + Kink + Aura Fix)
+            // 3. PROCESS PURCHASE (Aura & Kink Unlock)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
                 const amt = parseInt(urlParams.get('amt'));
                 let updated = false;
 
-                // Handle Kink Roulette (69)
                 if (amt === 69 && !unlockedPacks.includes(69)) {
                     unlockedPacks.push(69);
                     updated = true;
                 }
                 
-                // Handle Aura Extension (500)
                 if (amt === 500 && auraSoftLimit < 100) {
                     auraSoftLimit = 100;
                     aura = 100;
@@ -536,27 +561,26 @@
                 }
 
                 if (updated) {
-                    // Trigger Confetti
                     if (typeof confetti === 'function') {
                         confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                     }
-                    // Force Save to Database
-                    await sb.from('profiles').update({ 
-                        unlocked_packs: unlockedPacks, 
-                        aura_soft_limit: auraSoftLimit,
-                        aura_balance: aura 
-                    }).eq('id', currentUser.id);
+                    if (currentUser) {
+                        await sb.from('profiles').update({ 
+                            unlocked_packs: unlockedPacks, 
+                            aura_soft_limit: auraSoftLimit,
+                            aura_balance: aura 
+                        }).eq('id', currentUser.id);
+                    }
                 }
-                
-                // Clean URL
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
+            // 4. FINALIZING SETUP
             isLoaded = true;
             updateStatsUI();
             renderPacks();
 
-            // Real-time Leaderboard Listener
+            // Real-time Leaderboard
             sb.channel('leaderboard-live').on('postgres_changes', 
                 { event: '*', schema: 'public', table: 'profiles' }, 
                 () => fetchLeaderboard()
@@ -571,7 +595,7 @@
                 }
             }, 300000);
 
-            console.log("🚀 App fully loaded and rewards processed.");
+            console.log("🚀 App fully loaded.");
         }// End of init
 
         async function saveToDB() {
