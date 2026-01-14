@@ -542,10 +542,38 @@
             }
         }
 
-        async function init() {
-            console.log("🛠️ Init started. Checking auth...");
+        // 1. AUTH LOGIC: Sends the link to the user
+        async function sendMagicLink() {
+            const email = document.getElementById('email-input').value.trim();
+            if (!email) return alert("Please enter your email!");
 
-            // 1. SET UP THE AUTH LISTENER FIRST
+            const btn = document.getElementById('login-btn');
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
+            const { error } = await sb.auth.signInWithOtp({
+                email: email,
+                options: {
+                    emailRedirectTo: window.location.origin
+                }
+            });
+
+            if (error) {
+                alert("Error: " + error.message);
+                btn.innerText = "Send Magic Link";
+                btn.disabled = false;
+            } else {
+                alert("Success! Check your email for the login link.");
+                document.getElementById('login-msg').classList.remove('hidden');
+                btn.classList.add('hidden');
+            }
+        }
+
+        // 2. INITIALIZATION: Runs when the page loads
+        async function init() {
+            console.log("🛠️ App Initializing...");
+
+            // LISTEN for the moment the user clicks the Magic Link and returns
             sb.auth.onAuthStateChange(async (event, session) => {
                 console.log("🔔 Auth Event:", event);
                 if (session && session.user) {
@@ -553,6 +581,7 @@
                     document.getElementById('logged-out-view').classList.add('hidden');
                     document.getElementById('logged-in-view').classList.remove('hidden');
                     
+                    // Load User Profile Data
                     const { data: profile } = await sb.from('profiles').select('*').eq('id', currentUser.id).maybeSingle();
                     if (profile) {
                         aura = profile.aura_balance ?? 20;
@@ -566,7 +595,7 @@
                         updateStatsUI();
                         renderPacks();
                     }
-                    // Handle purchase redirects after login confirmed
+                    // Handle any pending Stripe purchases
                     handlePurchaseRedirect();
                 } else {
                     document.getElementById('logged-out-view').classList.remove('hidden');
@@ -574,68 +603,24 @@
                 }
             });
 
-            // 2. WAIT FOR HASH (Magic Link processing time)
+            // Brief pause to allow browser to parse Magic Link hash if present
             if (window.location.hash.includes('access_token')) {
-                console.log("🔑 Magic link detected, waiting for session...");
                 await new Promise(r => setTimeout(r, 500)); 
             }
 
-            // 3. INITIAL CHECK
+            // Check if a session already exists
             const { data: { session } } = await sb.auth.getSession();
             if (session) {
                 currentUser = session.user;
             }
 
-            // 4. LOAD APP STATE
             isLoaded = true;
             updateStatsUI();
             renderPacks();
 
-            // Real-time Leaderboard
+            // Real-time Leaderboard Listener
             sb.channel('leaderboard-live').on('postgres_changes', 
-                { event: '*', schema: 'public', table: 'profiles' }, 
-                () => fetchLeaderboard()
-            ).subscribe();
-
-            // Aura Refill Timer
-            setInterval(async () => {
-                if (aura < auraSoftLimit && isLoaded && currentUser) {
-                    aura++;
-                    await saveToDB();
-                    updateStatsUI();
-                }
-            }, 300000);
-
-            console.log("🚀 App initialized.");
-        }
-
-        async function handlePurchaseRedirect() {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('session') === 'success') {
-                const amt = parseInt(urlParams.get('amt'));
-                let updated = false;
-
-                if (amt === 69 && !unlockedPacks.includes(69)) {
-                    unlockedPacks.push(69);
-                    updated = true;
-                }
-                if (amt === 500 && auraSoftLimit < 100) {
-                    auraSoftLimit = 100;
-                    aura = 100;
-                    updated = true;
-                }
-
-                if (updated) {
-                    if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 70 });
-                    await sb.from('profiles').update({ 
-                        unlocked_packs: unlockedPacks, 
-                        aura_soft_limit: auraSoftLimit,
-                        aura_balance: aura 
-                    }).eq('id', currentUser.id);
-                }
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-        }
+                { event: '*', schema: '
 
         // --- Keep all your other functions (saveToDB, toggleSidebar, etc.) below this line ---
 
