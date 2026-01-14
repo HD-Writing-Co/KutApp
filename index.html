@@ -298,31 +298,20 @@
         }
 
         async function updateProfile() {
-            const newUsername = document.getElementById('username-input').value.trim();
-            if (!newUsername) return alert("Please enter a username");
+			const newUsername = document.getElementById('username-input').value;
+			// ... your image upload logic ...
 
-            // Get the current avatar src from the modal image
-            const currentAvatarUrl = document.getElementById('profile-img-modal').src;
+			const { error } = await sb.from('profiles').update({ 
+				username: newUsername,
+				avatar_url: currentAvatarUrl // Ensure this variable is being updated
+			}).eq('id', currentUser.id);
 
-            const { error } = await sb.from('profiles').update({ 
-                username: newUsername,
-                avatar_url: currentAvatarUrl
-            }).eq('id', currentUser.id);
-
-            if (error) {
-                console.error("❌ Profile Update Error:", error.message);
-                alert("Error saving username: " + error.message);
-            } else {
-                // Update the UI immediately
-                document.getElementById('username-display').innerText = newUsername;
-                
-                // Sync the rest of the stats (aura, packs) to be safe
-                await saveToDB(); 
-                
-                alert("Profile Updated! ✅");
-                closeAllModals();
-            }
-        }
+			if (!error) {
+				document.getElementById('username-display').innerText = newUsername;
+				await saveToDB(); // This ensures packs and aura are also synced
+				alert("Profile Saved!");
+			}
+		}
 
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0] || !currentUser) return;
