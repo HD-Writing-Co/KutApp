@@ -226,6 +226,7 @@
         let currentLang = 'en-US';
         let activePackId = 2;
 		let unlockedPacks = []; // New state to track purchased packs
+		let isLoaded = false;
 
         // 1. Updated Packs array with Kink Roulette
         const packs = [
@@ -561,13 +562,23 @@
                     updateStatsUI();
                 }
             }, 300000);
-        }
+			
+			isLoaded = true;
+			console.log("🚀 App fully loaded, cloud sync enabled.");
+		}
 
         async function saveToDB() {
+            // 1. Check if user exists
             if (!currentUser) return;
             
-            // SECURITY CHECK: If we know the user has 69 unlocked in memory, 
-            // but the save object is empty, stop the save to prevent relocking.
+            // 2. RACE CONDITION FIX: 
+            // If init() hasn't finished, isLoaded will be false. 
+            // We stop the save so we don't overwrite your purchase with [].
+            if (!isLoaded) {
+                console.log("⏳ Save blocked: Profile still loading...");
+                return;
+            }
+
             const saveObject = {
                 aura_balance: aura, 
                 aura_soft_limit: auraSoftLimit,
