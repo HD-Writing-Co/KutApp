@@ -297,21 +297,34 @@
             saveToDB();
         }
 
-        async function updateProfile() {
-			const newUsername = document.getElementById('username-input').value;
-			// ... your image upload logic ...
+        aasync function updateProfile() {
+            const usernameInput = document.getElementById('username-input');
+            const newUsername = usernameInput.value.trim();
+            
+            if (!newUsername) return alert("Please enter a username!");
 
-			const { error } = await sb.from('profiles').update({ 
-				username: newUsername,
-				avatar_url: currentAvatarUrl // Ensure this variable is being updated
-			}).eq('id', currentUser.id);
+            // FIX: Define the avatar URL from the modal image before saving
+            const currentAvatarUrl = document.getElementById('profile-img-modal').src;
 
-			if (!error) {
-				document.getElementById('username-display').innerText = newUsername;
-				await saveToDB(); // This ensures packs and aura are also synced
-				alert("Profile Saved!");
-			}
-		}
+            const { error } = await sb.from('profiles').update({ 
+                username: newUsername,
+                avatar_url: currentAvatarUrl
+            }).eq('id', currentUser.id);
+
+            if (error) {
+                console.error("❌ Profile Update Error:", error.message);
+                alert("Error: " + error.message);
+            } else {
+                // Update the sidebar text immediately so you see it
+                document.getElementById('username-display').innerText = newUsername;
+                
+                // Sync the rest of your stats to the DB
+                await saveToDB(); 
+                
+                alert("Profile Updated! ✅");
+                closeAllModals();
+            }
+        }
 
         async function uploadAvatar(input) {
             if (!input.files || !input.files[0] || !currentUser) return;
@@ -528,26 +541,27 @@
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            isLoaded = true; // Unlock the saveToDB function
+            isLoaded = true; 
             updateStatsUI();
             renderPacks();
-        }
 
-            sb.channel('leaderboard-live').on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, 
+            // Real-time Leaderboard Listener
+            sb.channel('leaderboard-live').on('postgres_changes', 
+                { event: '*', schema: 'public', table: 'profiles' }, 
                 () => fetchLeaderboard()
             ).subscribe();
 
+            // Aura Refill Timer
             setInterval(async () => {
-                if (aura < auraSoftLimit) {
+                if (aura < auraSoftLimit && isLoaded) {
                     aura++;
                     await saveToDB();
                     updateStatsUI();
                 }
             }, 300000);
-			
-			isLoaded = true;
-			console.log("🚀 App fully loaded, cloud sync enabled.");
-		}
+
+            console.log("🚀 App fully loaded, cloud sync enabled.");
+        }
 
         async function saveToDB() {
             // 1. Check if user exists
