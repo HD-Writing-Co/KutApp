@@ -516,30 +516,53 @@
                 }
             }
 
-            // 2. Process Purchase (The Stripe Success Redirect)
+            // 2. Process Purchase (Confetti + Kink + Aura Fix)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session') === 'success') {
                 const amt = parseInt(urlParams.get('amt'));
+                let updated = false;
+
+                // Handle Kink Roulette (69)
                 if (amt === 69 && !unlockedPacks.includes(69)) {
                     unlockedPacks.push(69);
-                    // Force an immediate save so the unlock "sticks"
-                    await sb.from('profiles').update({ unlocked_packs: unlockedPacks }).eq('id', currentUser.id);
+                    updated = true;
                 }
+                
+                // Handle Aura Extension (500)
+                if (amt === 500 && auraSoftLimit < 100) {
+                    auraSoftLimit = 100;
+                    aura = 100;
+                    updated = true;
+                }
+
+                if (updated) {
+                    // Trigger Confetti
+                    if (typeof confetti === 'function') {
+                        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                    }
+                    // Force Save to Database
+                    await sb.from('profiles').update({ 
+                        unlocked_packs: unlockedPacks, 
+                        aura_soft_limit: auraSoftLimit,
+                        aura_balance: aura 
+                    }).eq('id', currentUser.id);
+                }
+                
+                // Clean URL
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
 
-            // 3. Mark app as loaded to enable background syncing
             isLoaded = true;
             updateStatsUI();
             renderPacks();
 
-            // 4. Real-time Leaderboard Listener
+            // Real-time Leaderboard Listener
             sb.channel('leaderboard-live').on('postgres_changes', 
                 { event: '*', schema: 'public', table: 'profiles' }, 
                 () => fetchLeaderboard()
             ).subscribe();
 
-            // 5. Aura Refill Timer
+            // Aura Refill Timer
             setInterval(async () => {
                 if (aura < auraSoftLimit && isLoaded) {
                     aura++;
@@ -548,8 +571,8 @@
                 }
             }, 300000);
 
-            console.log("🚀 App fully loaded, cloud sync enabled.");
-        } // End of init
+            console.log("🚀 App fully loaded and rewards processed.");
+        }// End of init
 
         async function saveToDB() {
             if (!currentUser || !isLoaded) return;
