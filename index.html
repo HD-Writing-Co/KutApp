@@ -234,13 +234,17 @@
         ];
 		
 		function handleSpeak() {
+            // 1. Force a "wake up" in case the engine is stuck
+            window.speechSynthesis.resume();
             window.speechSynthesis.cancel();
+
             const text = document.getElementById('message').innerText;
             if (!text || text === "READY?") return;
 
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = currentLang;
 
+            // 2. Select the best voice
             const voices = window.speechSynthesis.getVoices();
             const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]) && 
                 (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))) 
@@ -249,6 +253,13 @@
             if (bestVoice) msg.voice = bestVoice;
             msg.pitch = 0.95; 
             msg.rate = 0.9; 
+
+            // 3. IMPORTANT: When speech ends, ensure it's fully cleared 
+            // so the next "Get Roasted" button click isn't ignored.
+            msg.onend = () => {
+                window.speechSynthesis.cancel();
+            };
+
             window.speechSynthesis.speak(msg);
         }
 
