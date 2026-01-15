@@ -265,51 +265,44 @@
 
         // ---------- Persistence ----------
         async function saveToDB() {
-            if (!currentUser) {
-                localStorage.setItem('kutapp_state', JSON.stringify({
-                    aura, auraSoftLimit, totalRoasts, totalToasts, unlockedPacks
-                }));
-                console.log('Saved locally (no user).');
-                return;
-            }
+            if (!currentUser) return;
             try {
                 const payload = {
+                    aura_balance: aura,
+                    aura_soft_limit: auraSoftLimit,
+                    unlocked_packs: unlockedPacks,
                     total_roasts: totalRoasts,
-                    total_toasts: totalToasts,
-                    aura: aura,
-                    aura_limit: auraSoftLimit,
-                    unlocked_packs: unlockedPacks
+                    total_toasts: totalToasts
                 };
                 const { error } = await sb.from('profiles').update(payload).eq('id', currentUser.id);
-                if (error) console.error('saveToDB error', error);
-                else console.log('Saved profile to DB', payload);
+                if (error) console.error('Save error:', error.message);
+                else console.log('✅ Progress saved to Supabase');
             } catch (err) {
-                console.error('saveToDB exception', err);
+                console.error('Save exception:', err);
             }
         }
 
         async function loadProfileFromDB(userId) {
             try {
                 const { data, error } = await sb.from('profiles').select('*').eq('id', userId).single();
-                if (error) {
-                    console.warn('Profile load error', error);
-                    return;
-                }
+                if (error) return console.warn('Load error:', error.message);
+                
                 if (data) {
-                    unlockedPacks = Array.isArray(data.unlocked_packs) ? data.unlocked_packs : (data.unlocked_packs ? JSON.parse(data.unlocked_packs) : []);
-                    auraSoftLimit = (typeof data.aura_limit === 'number') ? data.aura_limit : auraSoftLimit;
-                    aura = (typeof data.aura === 'number') ? data.aura : aura;
-                    totalRoasts = data.total_roasts || totalRoasts;
-                    totalToasts = data.total_toasts || totalToasts;
+                    // Match the manual columns you created
+                    aura = data.aura_balance ?? 20;
+                    auraSoftLimit = data.aura_soft_limit ?? 20;
+                    unlockedPacks = data.unlocked_packs || [];
+                    totalRoasts = data.total_roasts || 0;
+                    totalToasts = data.total_toasts || 0;
+
                     document.getElementById('username-display').innerText = data.username || 'Guest';
                     if (data.avatar_url) {
                         document.getElementById('sidebar-avatar').src = data.avatar_url;
                         document.getElementById('profile-img-modal').src = data.avatar_url;
                     }
-                    console.log('Loaded profile from DB:', data);
                 }
             } catch (err) {
-                console.error('loadProfileFromDB', err);
+                console.error('Load exception:', err);
             } finally {
                 updateStatsUI();
             }
@@ -341,28 +334,24 @@
             }
         }
 
-        async function applyPurchase(type, amt, showConfetti = false) {
-            console.log(`Applying ${type} (Amt: ${amt})`);
-            
-            switch(type) {
-                case 'extension':
-                    // Increases the limit (e.g., from 20 to 50 or 100)
-                    if (amt > auraSoftLimit) auraSoftLimit = amt;
-                    aura = auraSoftLimit; // Give them a full tank on upgrade
-                    break;
-                
-                case 'refill':
-                    // Add specific amount (10 or 100) without exceeding the current limit
-                    aura = Math.min(aura + amt, auraSoftLimit);
-                    break;
-
-                case 'pack':
-                    // Unlock a specific pack by its ID (e.g., 69 for Kink Roulette)
-                    if (!unlockedPacks.includes(amt)) {
-                        unlockedPacks.push(amt);
-                    }
-                    break;
+        async function applyPurchase(type, amt, fromStripe = false) {
+            if (type === 'extension') {
+                auraSoftLimit = amt;
+                aura = auraSoftLimit; 
+            } else if (type === 'refill') {
+                aura = Math.min(aura + amt, auraSoftLimit);
+            } else if (type === 'pack' || type === 'unlock') {
+                if (!unlockedPacks.includes(amt)) unlockedPacks.push(amt);
             }
+            
+            if (fromStripe) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            }
+
+            updateStatsUI();
+            renderPacks();
+            await saveToDB();
+        }
 
             // Visual feedback for the purchase
             if (showConfetti && typeof confetti === 'function') {
