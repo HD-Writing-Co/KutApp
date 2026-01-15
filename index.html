@@ -43,7 +43,6 @@
         .achievement-card { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; }
         .achievement-fill { height: 100%; transition: width 0.5s ease; }
         #subtext:empty { display: none; }
-        #message-container {
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -233,6 +232,25 @@
             { id: 10, name: "Main Character Energy", lang: "en-US", emoji: "✨", type: "toast" },
             { id: 69, name: "Kink Roulette", lang: "en-US", emoji: "😈", type: "roast", nsfw: true }
         ];
+		
+		function handleSpeak() {
+            window.speechSynthesis.cancel();
+            const text = document.getElementById('message').innerText;
+            if (!text || text === "READY?") return;
+
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = currentLang;
+
+            const voices = window.speechSynthesis.getVoices();
+            const bestVoice = voices.find(v => v.lang.startsWith(currentLang.split('-')[0]) && 
+                (v.name.includes('Natural') || v.name.includes('Premium') || v.name.includes('Google'))) 
+                || voices.find(v => v.lang.startsWith(currentLang.split('-')[0]));
+            
+            if (bestVoice) msg.voice = bestVoice;
+            msg.pitch = 0.95; 
+            msg.rate = 0.9; 
+            window.speechSynthesis.speak(msg);
+        }
 
         // ---------- Persistence ----------
         async function saveToDB() {
@@ -651,7 +669,7 @@
             document.getElementById('roastMode').addEventListener('click', () => setMode('roast'));
             document.getElementById('toastMode').addEventListener('click', () => setMode('toast'));
             document.getElementById('shareCardBtn').addEventListener('click', generateShareCard);
-            document.getElementById('speakBtn').addEventListener('click', () => { /* placeholder for TTS */ });
+            document.getElementById('speakBtn').addEventListener('click', handleSpeak);
             document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
             document.getElementById('sidebar-close').addEventListener('click', () => document.getElementById('sidebar').classList.remove('open'));
             document.getElementById('profile-link').addEventListener('click', () => openModal('profile-modal'));
