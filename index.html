@@ -322,48 +322,62 @@
         }
 
         async function handleStripeRedirectParams() {
-            // Do not call getSessionFromUrl (not available on this client). Use getSession() and URL params.
-            const params = new URLSearchParams(window.location.search);
-            const type = params.get('type');
-            const amt = params.get('amt') ? parseInt(params.get('amt')) : null;
-            if (!type || !amt) return;
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Look for the "success" flag we just set in Stripe
+            if (urlParams.get('session') === 'success') {
+                const type = urlParams.get('type');
+                const amt = parseInt(urlParams.get('amt'));
 
-            // If user not logged in, store redirect params and remove from URL
-            if (!currentUser) {
-                queueRedirectParams(type, amt);
-                history.replaceState({}, document.title, window.location.pathname);
-                return;
+                if (type && amt) {
+                    console.log(`💰 Stripe Success: Unlocking ${type} for amount ${amt}`);
+                    
+                    // Trigger the reward logic
+                    await applyPurchase(type, amt, true);
+
+                    // Clean the URL so the reward doesn't trigger again on refresh
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
             }
-
-            // If logged in and URL params present, apply purchase
-            await applyPurchase(type, amt, true);
-            history.replaceState({}, document.title, window.location.pathname);
         }
 
-        async function applyPurchase(type, amt, fromStripe = false) {
-            if (type === 'extension') {
-                auraSoftLimit = amt;
-                aura = Math.max(aura, auraSoftLimit);
-                await saveToDB();
-                confetti({ particleCount: 40, spread: 80, colors: ['#fbbf24', '#ffffff'] });
-                alert(`Aura limit updated to ${amt}!`);
-            } else if (type === 'pack' || type === 'unlock') {
-                const packId = amt;
-                const packExists = packs.some(p => p.id === packId);
-                if (packExists) {
-                    if (!unlockedPacks.includes(packId)) unlockedPacks.push(packId);
-                    await saveToDB();
-                    confetti({ particleCount: 30, spread: 60, colors: ['#db2777'] });
-                    alert('Pack unlocked!');
-                } else {
-                    aura = Math.min(auraSoftLimit + 500, aura + amt);
-                    await saveToDB();
-                    alert('Aura refilled!');
-                }
-            } else {
-                console.warn('Unknown purchase type', type, amt);
+        async function applyPurchase(type, amt, showConfetti = false) {
+            console.log(`Applying ${type} (Amt: ${amt})`);
+            
+            switch(type) {
+                case 'extension':
+                    // Increases the limit (e.g., from 20 to 50 or 100)
+                    if (amt > auraSoftLimit) auraSoftLimit = amt;
+                    aura = auraSoftLimit; // Give them a full tank on upgrade
+                    break;
+                
+                case 'refill':
+                    // Add specific amount (10 or 100) without exceeding the current limit
+                    aura = Math.min(aura + amt, auraSoftLimit);
+                    break;
+
+                case 'pack':
+                    // Unlock a specific pack by its ID (e.g., 69 for Kink Roulette)
+                    if (!unlockedPacks.includes(amt)) {
+                        unlockedPacks.push(amt);
+                    }
+                    break;
             }
+
+            // Visual feedback for the purchase
+            if (showConfetti && typeof confetti === 'function') {
+                confetti({ 
+                    particleCount: 150, 
+                    spread: 70, 
+                    origin: { y: 0.6 },
+                    colors: ['#fbbf24', '#db2777', '#ffffff'] 
+                });
+            }
+
+            // Save and Update UI
             updateStatsUI();
+            renderPacks();
+            await saveToDB();
         }
 
         // ---------- Auth ----------
