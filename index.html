@@ -470,10 +470,16 @@
 
             if (currentMode === 'roast') {
                 if (aura < 1) return openModal('shop-modal');
-                aura -= 1; totalRoasts++;
+                aura -= 1; 
+                totalRoasts++;
             } else {
-                if (aura >= auraSoftLimit) return alert('Aura Full!');
-                aura = Math.min(auraSoftLimit + 500, aura + 0.25); totalToasts++;
+                // Fix: Only refill up to the actual earned soft limit (20, 50, or 100)
+                if (aura >= auraSoftLimit) {
+                    document.getElementById('message').innerText = 'AURA FULL';
+                    return;
+                }
+                aura = Math.min(auraSoftLimit, aura + 0.5); 
+                totalToasts++;
                 confetti({ particleCount: 25, spread: 70, origin: { y: 0.6 }, colors: ['#fbbf24', '#ffffff'] });
             }
 
@@ -488,12 +494,10 @@
                     document.getElementById('subtext').innerText = item.translation || '';
                     document.getElementById('action-row').style.opacity = '1';
                 } else {
-                    console.log('No phrases found for pack_id', targetId, 'table', table);
                     document.getElementById('message').innerText = 'CONTENT MISSING';
                 }
             } catch (err) {
                 console.error('triggerAction error', err);
-                document.getElementById('message').innerText = 'CONTENT MISSING';
             }
 
             updateStatsUI();
