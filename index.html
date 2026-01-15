@@ -392,13 +392,18 @@
 
         async function logout() {
             try {
+                // 1. End Supabase session
                 await sb.auth.signOut();
-                console.log('Signed out');
+                console.log('Signed out from Supabase');
             } catch (err) {
                 console.warn('signOut error', err);
             } finally {
+                // 2. Clear all local variables and browser storage
                 currentUser = null;
-                location.href = window.location.origin;
+                localStorage.clear(); 
+                
+                // 3. Force move to home page and reload
+                window.location.replace(window.location.origin);
             }
         }
 
