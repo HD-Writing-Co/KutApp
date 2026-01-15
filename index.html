@@ -335,6 +335,8 @@
         }
 
         async function applyPurchase(type, amt, fromStripe = false) {
+            console.log(`Applying ${type} (Amt: ${amt})`);
+            
             if (type === 'extension') {
                 auraSoftLimit = amt;
                 aura = auraSoftLimit; 
@@ -344,17 +346,8 @@
                 if (!unlockedPacks.includes(amt)) unlockedPacks.push(amt);
             }
             
-            if (fromStripe) {
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            }
-
-            updateStatsUI();
-            renderPacks();
-            await saveToDB();
-        }
-
-            // Visual feedback for the purchase
-            if (showConfetti && typeof confetti === 'function') {
+            // Visual feedback - only triggers if coming from a successful purchase
+            if (fromStripe && typeof confetti === 'function') {
                 confetti({ 
                     particleCount: 150, 
                     spread: 70, 
@@ -363,7 +356,6 @@
                 });
             }
 
-            // Save and Update UI
             updateStatsUI();
             renderPacks();
             await saveToDB();
